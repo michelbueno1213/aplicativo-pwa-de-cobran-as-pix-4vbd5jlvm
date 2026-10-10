@@ -1,0 +1,22 @@
+{
+  "name": "Skip Pix",
+  "short_name": "Skip Pix",
+  "description": "Aplicativo PWA mobile-first de cobranças Pix da Skip",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0B0D",
+  "theme_color": "#0B0B0D",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

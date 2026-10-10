@@ -1,0 +1,212 @@
+{
+  "generatedAt": "2026-10-10T11:19:56.710Z",
+  "collections": [
+    {
+      "name": "users",
+      "type": "auth",
+      "apiRules": {
+        "list": "id = @request.auth.id",
+        "view": "id = @request.auth.id",
+        "create": "",
+        "update": "id = @request.auth.id",
+        "delete": "id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "avatar",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "pix_key",
+          "type": "text",
+          "required": false,
+          "system": false
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
+        "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
+      ]
+    },
+    {
+      "name": "charges",
+      "type": "base",
+      "apiRules": {
+        "list": "user_id = @request.auth.id",
+        "view": "user_id = @request.auth.id",
+        "create": "@request.auth.id != ''",
+        "update": "user_id = @request.auth.id",
+        "delete": "user_id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "customer_name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "amount_cents",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "pix_key",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["pending", "paid", "expired", "cancelled"]
+        },
+        {
+          "name": "payment_link",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "payment_method",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["simulated", "real"]
+        },
+        {
+          "name": "paid_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "expires_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_charges_status ON charges (status)",
+        "CREATE INDEX idx_charges_user ON charges (user_id)",
+        "CREATE INDEX idx_charges_created ON charges (created DESC)"
+      ]
+    },
+    {
+      "name": "customers",
+      "type": "base",
+      "apiRules": {
+        "list": "user_id = @request.auth.id",
+        "view": "user_id = @request.auth.id",
+        "create": "@request.auth.id != ''",
+        "update": "user_id = @request.auth.id",
+        "delete": "user_id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "email",
+          "type": "email",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "phone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "pix_key",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_customers_user ON customers (user_id)",
+        "CREATE INDEX idx_customers_name ON customers (name)",
+        "CREATE INDEX idx_customers_created ON customers (created DESC)"
+      ]
+    }
+  ]
+}

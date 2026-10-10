@@ -1,0 +1,26 @@
+<!-- HTML template for the frontend react app -->
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Skip Pix — Cobranças Inteligentes</title>
+    <meta name="description" content="Aplicativo PWA mobile-first de cobranças Pix com identidade Skip" />
+    <meta name="theme-color" content="#0B0B0D" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Skip Pix" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
+  </head>
+
+  <body class="bg-[#F6F4EF] text-[#1A1916] antialiased selection:bg-[#C9A227] selection:text-[#0B0B0D]">
+    <div id="root"></div>
+    <!-- @skip-protected: Do not remove. Required for app features. -->
+    <script src="https://goskip.dev/skip.js"></script>
+    <!-- @skip-protected: Do not remove. App entrypoint. -->
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,120 @@
+/* Global styles - Theme, font, utilities, animations and global components */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 42 20% 95%; /* #F6F4EF cinza-pérola quente */
+    --foreground: 36 8% 9%; /* #1A1916 */
+
+    --card: 0 0% 100%;
+    --card-foreground: 36 8% 9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 36 8% 9%;
+
+    --primary: 45 68% 47%; /* #C9A227 dourado metálico */
+    --primary-foreground: 36 8% 9%;
+
+    --secondary: 40 18% 92%;
+    --secondary-foreground: 36 8% 9%;
+
+    --muted: 36 10% 90%;
+    --muted-foreground: 36 6% 40%; /* #6B6760 */
+
+    --accent: 35 38% 40%; /* #8C6A3F bronze */
+    --accent-foreground: 45 30% 96%;
+
+    --destructive: 2 73% 45%; /* #B3261E */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 38 18% 84%; /* #D6D0C5 */
+    --input: 38 18% 84%;
+    --ring: 45 68% 47%;
+
+    --radius: 0.625rem;
+
+    --sidebar-background: 240 7% 5%; /* #0B0B0D preto profundo */
+    --sidebar-foreground: 45 30% 94%;
+    --sidebar-primary: 45 68% 47%;
+    --sidebar-primary-foreground: 240 7% 5%;
+    --sidebar-accent: 35 25% 14%;
+    --sidebar-accent-foreground: 45 68% 60%;
+    --sidebar-border: 45 40% 20%;
+    --sidebar-ring: 45 68% 47%;
+
+    --chart-1: 45 68% 47%;
+    --chart-2: 122 46% 34%;
+    --chart-3: 35 38% 40%;
+    --chart-4: 36 100% 35%;
+    --chart-5: 2 73% 45%;
+  }
+
+  body {
+    font-family:
+      'Inter',
+      system-ui,
+      -apple-system,
+      sans-serif;
+    background-color: #f6f4ef;
+    color: #1a1916;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-serif,
+  .font-display {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  section[aria-label='Notifications alt+T'] {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+@layer utilities {
+  .bg-gold-gradient {
+    background: linear-gradient(135deg, #c9a227 0%, #a8861f 100%);
+  }
+
+  .bg-dark-gradient {
+    background: radial-gradient(circle at 50% 0%, #1c1813 0%, #0b0b0d 70%, #070708 100%);
+  }
+
+  .bg-card-glass {
+    background: rgba(18, 17, 16, 0.78);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(201, 162, 39, 0.22);
+  }
+
+  .gold-glow {
+    box-shadow: 0 4px 20px -2px rgba(201, 162, 39, 0.35);
+  }
+
+  .gold-border {
+    border-color: rgba(201, 162, 39, 0.25);
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(140, 106, 63, 0.3);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 162, 39, 0.5);
+}
