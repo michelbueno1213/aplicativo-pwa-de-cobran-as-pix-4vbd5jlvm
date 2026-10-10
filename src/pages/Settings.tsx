@@ -371,7 +371,7 @@ export const SettingsPage: React.FC = () => {
                 Conexão da Provedora Pix & DePix
               </h2>
               <p className="text-xs text-[#6B6760]">
-                Status da liquidação financeira e liquidez em Bitcoin/Liquid
+                Cobrança via Pix com recebimento em DePix na rede Liquid
               </p>
             </div>
           </div>
@@ -384,12 +384,11 @@ export const SettingsPage: React.FC = () => {
 
         <div className="p-4 rounded-xl bg-[#FAF8F3] border border-[#E6E1D8] space-y-2">
           <p className="text-xs text-[#1A1916] leading-relaxed">
-            Atualmente suas cobranças são emitidas em <strong>Fluxo Simulado</strong>. Nenhum
-            cliente transfere valores reais por enquanto.
+            Cobranças geradas em modo simulado — nada processa pagamento real.
           </p>
           <p className="text-xs text-[#8C6A3F] leading-relaxed">
-            Em breve você poderá conectar sua provedora Pix e a{' '}
-            <strong>carteira Liquid via DePix</strong> para processar liquidações reais diretas.
+            Quando a integração com a provedora estiver ativa, seus clientes pagarão via Pix e os
+            valores serão recebidos em <strong>DePix na sua carteira Liquid</strong>.
           </p>
         </div>
 
@@ -520,11 +519,11 @@ export const SettingsPage: React.FC = () => {
             <div className="p-3.5 rounded-xl bg-[#FAF8F3] border border-[#E6E1D8] space-y-2">
               <p className="text-[#1A1916] leading-relaxed">
                 Estamos finalizando a parceria homologada com a provedora Pix e o gateway de
-                liquidação DePix para a rede Liquid Network.
+                liquidação em DePix para a rede Liquid Network.
               </p>
               <p className="text-[#8C6A3F] leading-relaxed">
                 Assim que a parceria for aprovada, você poderá inserir suas credenciais de produção
-                e receber seus pagamentos instantaneamente.
+                e receber em DePix diretamente na sua carteira Liquid a cada cobrança Pix quitada.
               </p>
             </div>
 

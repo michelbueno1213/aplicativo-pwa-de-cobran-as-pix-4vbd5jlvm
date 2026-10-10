@@ -141,7 +141,8 @@ export const NewCharge: React.FC = () => {
             Nova Cobrança Pix
           </h1>
           <p className="text-xs sm:text-sm text-[#6B6760] mt-1">
-            Preencha os dados do cliente e o valor para emitir o link Pix imediato
+            Preencha os dados do cliente e o valor para emitir a cobrança Pix (recebimento em DePix
+            na carteira Liquid)
           </p>
         </div>
 
@@ -227,14 +228,14 @@ export const NewCharge: React.FC = () => {
             {errors.amount && <p className="text-xs text-[#B3261E] mt-1">{errors.amount}</p>}
           </div>
 
-          {/* Chave Pix */}
+          {/* Chave Pix para Cobrança */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label
                 htmlFor="pixKey"
                 className="text-xs font-semibold uppercase tracking-wider text-[#1A1916]"
               >
-                Chave Pix de Recebimento *
+                Chave Pix da Cobrança *
               </Label>
               {user?.pix_key && (
                 <button
@@ -264,11 +265,12 @@ export const NewCharge: React.FC = () => {
                 } text-[#1A1916] rounded-xl`}
               />
             </div>
-            {!pixKey && user?.pix_key && (
-              <p className="text-[11px] text-[#8C6A3F]">
-                Será usada a chave padrão do seu cadastro ({user.pix_key})
-              </p>
-            )}
+            <p className="text-[11px] text-[#8C6A3F]">
+              {!pixKey && user?.pix_key
+                ? `Será usada a chave padrão cadastrada (${user.pix_key}). `
+                : ''}
+              O pagador quitará via Pix e você receberá em DePix na sua carteira Liquid.
+            </p>
             {errors.pixKey && <p className="text-xs text-[#B3261E] mt-1">{errors.pixKey}</p>}
           </div>
 
@@ -325,8 +327,10 @@ export const NewCharge: React.FC = () => {
                   className="text-gray-400"
                 />
                 <div>
-                  <span className="text-xs font-bold text-[#6B6760] block">Real (provedora)</span>
-                  <span className="text-[10px] text-[#8C6A3F]">Aguardando conexão</span>
+                  <span className="text-xs font-bold text-[#6B6760] block">
+                    Real (provedora + DePix)
+                  </span>
+                  <span className="text-[10px] text-[#8C6A3F]">Aguardando conexão Liquid</span>
                 </div>
               </label>
             </div>

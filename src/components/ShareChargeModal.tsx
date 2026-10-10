@@ -59,13 +59,16 @@ export const ShareChargeModal: React.FC<ShareChargeModalProps> = ({
         {/* Resumo da Cobrança */}
         <div className="my-2 p-3.5 rounded-xl bg-[#F6F4EF] border border-[#E6E1D8] space-y-1">
           <div className="flex justify-between items-center text-xs text-[#6B6760]">
-            <span>Valor a receber</span>
+            <span>Valor da cobrança</span>
             <span className="font-serif text-base font-bold text-[#1A1916]">
               {formatCurrency(charge.amount_cents)}
             </span>
           </div>
+          <div className="text-[11px] text-[#8C6A3F]">
+            Pagamento via Pix pelo cliente • Recebimento em DePix (Liquid) para você
+          </div>
           {charge.description && (
-            <div className="text-xs text-[#8C6A3F] truncate">{charge.description}</div>
+            <div className="text-xs text-[#6B6760] truncate">{charge.description}</div>
           )}
         </div>
 
@@ -73,8 +76,9 @@ export const ShareChargeModal: React.FC<ShareChargeModalProps> = ({
         <div className="p-3 rounded-lg bg-[#FFF3E0] border border-[#B26A00]/25 text-[#B26A00] text-xs flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span className="leading-snug">
-            <strong>Link simulado:</strong> Este link não processa pagamento bancário real. Ele
-            serve para validação e testes até a aprovação da provedora Pix.
+            <strong>Modo simulado:</strong> Cobranças geradas em modo simulado — nada processa
+            pagamento real. Quando a integração com a provedora estiver ativa, os valores serão
+            recebidos em DePix na sua carteira Liquid.
           </span>
         </div>
 

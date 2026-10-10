@@ -137,8 +137,9 @@ export const Dashboard: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-[#D6D0C5] mt-1 leading-relaxed">
-                As cobranças geradas aqui não processam pagamentos reais. Conecte sua chave Pix para
-                ativar o modo real assim que a parceria for aprovada.
+                Cobranças geradas em modo simulado — nada processa pagamento real. Quando a
+                integração com a provedora estiver ativa, os valores serão recebidos em DePix na sua
+                carteira Liquid.
               </p>
             </div>
           </div>
@@ -154,31 +155,31 @@ export const Dashboard: React.FC = () => {
 
       {/* Grade de KPIs (2x2 Mobile / 4 colunas Desktop) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-        {/* KPI 1: Total cobrado */}
+        {/* KPI 1: Total recebido em DePix */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#D6D0C5] shadow-xs hover:shadow-md transition-all group">
           <div className="flex items-center justify-between text-xs text-[#6B6760] mb-2 font-medium">
-            <span>Total cobrado (simulado)</span>
+            <span>Total recebido (DePix simulado)</span>
             <CheckCircle className="w-4 h-4 text-[#2E7D32]" />
           </div>
           <div className="font-serif text-xl sm:text-3xl font-extrabold text-[#1A1916] tracking-tight">
             {formatCurrency(totalCollectedCents)}
           </div>
           <p className="text-[11px] text-[#2E7D32] mt-1 font-medium flex items-center gap-1">
-            <span>●</span> {paidCharges.length} cobranças pagas
+            <span>●</span> {paidCharges.length} cobranças liquidadas
           </p>
         </div>
 
         {/* KPI 2: Cobranças pendentes */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#D6D0C5] shadow-xs hover:shadow-md transition-all group">
           <div className="flex items-center justify-between text-xs text-[#6B6760] mb-2 font-medium">
-            <span>Cobranças pendentes</span>
+            <span>Cobranças Pix pendentes</span>
             <Clock className="w-4 h-4 text-[#B26A00]" />
           </div>
           <div className="font-serif text-xl sm:text-3xl font-extrabold text-[#1A1916] tracking-tight">
             {pendingCount}
           </div>
           <p className="text-[11px] text-[#B26A00] mt-1 font-medium flex items-center gap-1">
-            <span>●</span> aguardando pagamento
+            <span>●</span> aguardando pagamento Pix
           </p>
         </div>
 
@@ -196,16 +197,18 @@ export const Dashboard: React.FC = () => {
           </p>
         </div>
 
-        {/* KPI 4: Esperado (pendentes) */}
+        {/* KPI 4: A receber em DePix (pendentes) */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#D6D0C5] shadow-xs hover:shadow-md transition-all group">
           <div className="flex items-center justify-between text-xs text-[#6B6760] mb-2 font-medium">
-            <span>Esperado (pendentes)</span>
+            <span>A receber (DePix)</span>
             <AlertCircle className="w-4 h-4 text-[#8C6A3F]" />
           </div>
           <div className="font-serif text-xl sm:text-3xl font-extrabold text-[#1A1916] tracking-tight">
             {formatCurrency(expectedPendingCents)}
           </div>
-          <p className="text-[11px] text-[#8C6A3F] mt-1 font-medium">soma dos boletos pendentes</p>
+          <p className="text-[11px] text-[#8C6A3F] mt-1 font-medium">
+            soma das cobranças pendentes
+          </p>
         </div>
       </div>
 

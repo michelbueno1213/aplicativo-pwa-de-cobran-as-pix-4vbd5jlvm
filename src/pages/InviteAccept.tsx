@@ -97,7 +97,7 @@ export const InviteAccept: React.FC = () => {
             Ativação de Convite
           </h1>
           <p className="text-sm text-[#8C6A3F] mt-1 font-sans">
-            Complete seu cadastro para acessar a plataforma
+            Complete seu cadastro para emitir cobranças Pix e receber em DePix
           </p>
         </div>
 

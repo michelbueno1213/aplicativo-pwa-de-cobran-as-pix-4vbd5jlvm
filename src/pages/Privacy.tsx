@@ -31,8 +31,9 @@ export const Privacy: React.FC = () => {
             <h2 className="font-serif text-base font-bold text-[#1A1916]">1. Dados Coletados</h2>
             <p>
               O ROM coleta estritamente as informações necessárias para a geração das ordens de
-              cobrança simuladas e identificação dos operadores da conta: nome, e-mail, telefone e
-              chave Pix mascarada.
+              cobrança Pix e liquidação em DePix (Liquid), além da identificação dos operadores da
+              conta: nome, e-mail, telefone, chave Pix da cobrança e endereço da carteira Liquid
+              para crédito de DePix.
             </p>
           </section>
 
@@ -52,8 +53,9 @@ export const Privacy: React.FC = () => {
               3. Compartilhamento de Dados
             </h2>
             <p>
-              Não comercializamos nem cedemos dados cadastrais para terceiros. Dados de pagamento
-              simulado são de uso exclusivo para demonstração da ferramenta.
+              Não comercializamos nem cedemos dados cadastrais para terceiros. Informações de ordens
+              de pagamento e liquidações em DePix são processadas com sigilo estrito e os dados do
+              modo simulado são de uso exclusivo para testes e demonstração da ferramenta.
             </p>
           </section>
 

@@ -28,7 +28,7 @@ export const ChatPage: React.FC = () => {
       id: 'welcome',
       role: 'assistant',
       content:
-        'Olá! Eu sou o assistente de Suporte ROM. Posso esclarecer dúvidas sobre cobranças Pix, como funciona o Modo Simulado, gerenciamento de clientes ou a futura integração com carteira Liquid e DePix. Como posso ajudar você hoje?',
+        'Olá! Eu sou o assistente de Suporte ROM. No ROM, seu cliente paga via Pix e você recebe em DePix na carteira Liquid. Posso esclarecer dúvidas sobre a emissão de cobranças Pix, funcionamento do Modo Simulado, gestão de clientes ou o recebimento em DePix. Como posso ajudar você hoje?',
       created: new Date().toISOString(),
     },
   ])
@@ -125,7 +125,7 @@ export const ChatPage: React.FC = () => {
 
       // Fallback amigável se a IA estiver sem cota ou indisponível
       const fallbackContent =
-        'Compreendi sua dúvida sobre a plataforma ROM! O modo simulado permite testar emissão e compartilhamento de cobranças. Assim que a provedora Pix for aprovada, você poderá conectar suas chaves de API e receber DePix na carteira Liquid. Se precisar de suporte adicional, entre em contato com nosso time administrativo.'
+        'Compreendi sua dúvida sobre a plataforma ROM! Lembre-se: o pagador quita a cobrança via Pix e você recebe o valor em DePix na sua carteira Liquid. No modo simulado atual, os testes não processam valores reais. Assim que a provedora Pix for homologada, você poderá conectar suas chaves de API e receber DePix diretamente na carteira Liquid.'
 
       setMessages((prev) =>
         prev.map((m) =>
@@ -159,7 +159,7 @@ export const ChatPage: React.FC = () => {
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
             <p className="text-xs text-[#8C6A3F]">
-              Assistente oficial para dúvidas de cobranças Pix e DePix
+              Cobrança via Pix • Recebimento em DePix na Liquid
             </p>
           </div>
         </div>
@@ -258,7 +258,7 @@ export const ChatPage: React.FC = () => {
         </form>
 
         <p className="text-[10px] text-center text-[#8C6A3F] mt-2">
-          Atendimento inteligente com respostas baseadas nas regras do ROM e modo simulado.
+          Atendimento inteligente: cobranças emitidas via Pix com recebimento em DePix na Liquid.
         </p>
       </div>
     </div>

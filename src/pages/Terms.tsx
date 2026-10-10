@@ -29,13 +29,19 @@ export const Terms: React.FC = () => {
         <div className="prose prose-sm text-xs sm:text-sm text-[#1A1916] space-y-4 leading-relaxed">
           <section className="space-y-2">
             <h2 className="font-serif text-base font-bold text-[#1A1916]">
-              1. Natureza do Serviço e Modo Simulado
+              1. Natureza do Serviço e Modelo Operacional (Pix → DePix)
             </h2>
             <p>
-              O ROM é uma plataforma de gestão e automação de cobranças Pix. Atualmente, a
-              plataforma opera em <strong>Fluxo Simulado</strong>, destinado a testes, validação de
-              fluxos comerciais e homologação de rotas de integração. Nenhuma cobrança gerada neste
-              modo movimenta moeda fiduciária real no Banco Central do Brasil.
+              O ROM é uma plataforma de gestão e automação de cobranças. O produto opera no modelo
+              em que os clientes finais (pagadores) realizam o pagamento via Pix (QR Code / Copia e
+              Cola), e o usuário recebedor tem seus valores liquidados em <strong>DePix</strong>{' '}
+              (stablecoin de Real na rede Liquid Network), creditados diretamente em sua carteira
+              Liquid. O usuário não recebe valores em Pix tradicional na conta bancária.
+            </p>
+            <p>
+              Atualmente, a plataforma opera em <strong>Fluxo Simulado</strong>, destinado a testes,
+              validação de fluxos comerciais e homologação da rota de liquidação. Nenhuma cobrança
+              gerada no modo simulado movimenta moeda fiduciária nem emite tokens DePix reais.
             </p>
           </section>
 
@@ -50,12 +56,13 @@ export const Terms: React.FC = () => {
 
           <section className="space-y-2">
             <h2 className="font-serif text-base font-bold text-[#1A1916]">
-              3. Futura Conexão de Provedora e DePix na Liquid
+              3. Conexão de Provedora e Liquidação em DePix na Liquid
             </h2>
             <p>
-              Quando a parceria com a provedora de pagamentos autorizada for homologada, os usuários
-              poderão optar por liquidações convencionais em Reais (BRL) ou em representações
-              digitais DePix na Liquid Network, sujeitas aos termos regulatórios aplicáveis.
+              Quando a parceria com a provedora de pagamentos Pix e o gateway de liquidação DePix
+              for ativada em produção, as cobranças pagas pelos clientes finais via Pix serão
+              convertidas e creditadas exclusivamente em tokens DePix na carteira Liquid associada
+              pelo usuário, de acordo com as regras de rede e termos regulatórios aplicáveis.
             </p>
           </section>
 

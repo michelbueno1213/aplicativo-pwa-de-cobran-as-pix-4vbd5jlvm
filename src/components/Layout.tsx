@@ -127,7 +127,7 @@ export default function Layout() {
           <div className="flex items-center justify-between text-[11px] font-sans font-medium uppercase tracking-wider text-[#8C6A3F]">
             <span className="flex items-center gap-1.5">
               <Wallet className="w-3.5 h-3.5 text-[#C9A227]" />
-              Saldo Simulado
+              Saldo DePix (Simulado)
             </span>
             <span className="px-1.5 py-0.5 rounded text-[10px] bg-[#B26A00]/20 text-[#F5D77F] border border-[#B26A00]/30 font-semibold">
               TESTE
@@ -137,7 +137,7 @@ export default function Layout() {
             {formatCurrency(simulatedTotalCents)}
           </div>
           <p className="text-[10px] text-[#6B6760] mt-1 leading-tight">
-            Recebimento simulado (acumulado de cobranças pagas)
+            Recebido em DePix (acumulado de cobranças simuladas quitadas)
           </p>
         </div>
 

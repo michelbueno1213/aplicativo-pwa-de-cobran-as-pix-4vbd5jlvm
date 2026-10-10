@@ -178,14 +178,17 @@ export const ChargeDetails: React.FC = () => {
         {/* Valor Grande Destacado */}
         <div className="text-center py-4 bg-[#FAF8F3] rounded-2xl border border-[#E6E1D8]">
           <span className="text-xs font-sans text-[#8C6A3F] uppercase tracking-wider block mb-1">
-            Valor da Cobrança
+            Valor da Cobrança Pix
           </span>
           <span className="font-serif text-3xl sm:text-4xl font-extrabold text-[#1A1916] tracking-tight">
             {formatCurrency(charge.amount_cents)}
           </span>
+          <span className="text-[11px] text-[#8C6A3F] block mt-1">
+            Pagador quita via Pix • Recebimento do vendedor em DePix (Liquid)
+          </span>
           {charge.paid_at && (
-            <p className="text-xs text-[#2E7D32] mt-1 font-medium">
-              Pago em {formatDateBr(charge.paid_at)}
+            <p className="text-xs text-[#2E7D32] mt-1.5 font-medium">
+              Liquidado em {formatDateBr(charge.paid_at)}
             </p>
           )}
         </div>
@@ -194,7 +197,7 @@ export const ChargeDetails: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div className="p-3.5 rounded-xl bg-[#F6F4EF] border border-[#E6E1D8]">
             <span className="text-[#8C6A3F] uppercase tracking-wider text-[10px] block font-semibold">
-              Chave Pix
+              Chave Pix da Cobrança
             </span>
             <span className="font-mono text-[#1A1916] font-medium mt-0.5 block">
               {maskPixKey(charge.pix_key)}
@@ -203,10 +206,12 @@ export const ChargeDetails: React.FC = () => {
 
           <div className="p-3.5 rounded-xl bg-[#F6F4EF] border border-[#E6E1D8]">
             <span className="text-[#8C6A3F] uppercase tracking-wider text-[10px] block font-semibold">
-              Método
+              Método / Liquidação
             </span>
             <span className="text-[#1A1916] font-medium mt-0.5 block">
-              {charge.payment_method === 'simulated' ? 'Pix Simulado (Teste)' : 'Pix Real'}
+              {charge.payment_method === 'simulated'
+                ? 'Pix Simulado (Teste) → DePix Liquid'
+                : 'Pix Real → DePix Liquid'}
             </span>
           </div>
 
@@ -297,8 +302,9 @@ export const ChargeDetails: React.FC = () => {
         <div className="pt-4 border-t border-[#E6E1D8] text-center">
           <p className="text-[11px] text-[#8C6A3F] flex items-center justify-center gap-1.5">
             <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-            Modo simulado — o pagamento não é processado. Conecte sua provedora para cobranças
-            reais.
+            Cobranças geradas em modo simulado — nada processa pagamento real. Quando a integração
+            com a provedora estiver ativa, os valores serão recebidos em DePix na sua carteira
+            Liquid.
           </p>
         </div>
       </div>
