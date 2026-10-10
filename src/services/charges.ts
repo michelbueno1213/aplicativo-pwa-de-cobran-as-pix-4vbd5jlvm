@@ -49,7 +49,7 @@ export const chargesService = {
 
     // Gerar link simulado de pagamento Pix
     const fakeId = Math.random().toString(36).substring(2, 10).toUpperCase()
-    const simulatedLink = `https://pix.skip.app/pay/sim_${fakeId}`
+    const simulatedLink = `https://rom.app/pay/sim_${fakeId}`
 
     const payload = {
       ...data,

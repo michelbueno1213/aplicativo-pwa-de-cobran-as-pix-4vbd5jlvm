@@ -7,7 +7,7 @@ interface SkipLogoProps {
   subtitle?: string
 }
 
-export const SkipLogo: React.FC<SkipLogoProps> = ({
+export const RomLogo: React.FC<SkipLogoProps> = ({
   className = '',
   size = 40,
   showText = true,
@@ -45,16 +45,23 @@ export const SkipLogo: React.FC<SkipLogoProps> = ({
             strokeWidth="1"
             strokeOpacity="0.7"
           />
-          {/* Monograma 'S' estilizado */}
-          <path
-            d="M28 17C28 15.34 26.21 14 24 14C21.79 14 20 15.34 20 17C20 20 28 19.5 28 23.5C28 25.5 26 27 24 27C21.5 27 19.8 25.5 19.8 23.8"
-            stroke="url(#goldGrad)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {/* Raio/símbolo Pix cruzado sutil */}
-          <circle cx="24" cy="33" r="1.5" fill="#C9A227" />
+          {/* Monograma 'ROM' estilizado gravado no brasão */}
+          <text
+            x="24"
+            y="26"
+            textAnchor="middle"
+            dominantBaseline="central"
+            fill="url(#goldGrad)"
+            fontFamily="'Playfair Display', Georgia, serif"
+            fontSize="11"
+            fontWeight="800"
+            letterSpacing="1"
+            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}
+          >
+            ROM
+          </text>
+          {/* Losango sutil do Pix na ponta inferior do escudo */}
+          <path d="M24 31.5L26 33.5L24 35.5L22 33.5Z" fill="#C9A227" />
           <defs>
             <linearGradient
               id="goldGrad"
@@ -74,9 +81,9 @@ export const SkipLogo: React.FC<SkipLogoProps> = ({
 
       {showText && (
         <div className="flex flex-col text-left">
-          <span className="font-serif text-xl font-bold tracking-tight text-[#F6F4EF] flex items-center gap-1.5 leading-none">
-            Skip
-            <span className="text-[#C9A227] text-xs font-sans font-semibold tracking-wider px-1.5 py-0.5 rounded bg-[#C9A227]/15 border border-[#C9A227]/30">
+          <span className="font-serif text-xl font-bold tracking-wider text-[#F6F4EF] flex items-center gap-1.5 leading-none">
+            ROM
+            <span className="text-[#C9A227] text-[11px] font-sans font-semibold tracking-wider px-1.5 py-0.5 rounded bg-[#C9A227]/15 border border-[#C9A227]/30">
               PIX
             </span>
           </span>
@@ -91,4 +98,5 @@ export const SkipLogo: React.FC<SkipLogoProps> = ({
   )
 }
 
-export default SkipLogo
+export const SkipLogo = RomLogo
+export default RomLogo

@@ -1,7 +1,7 @@
 {
-  "name": "Skip Pix",
-  "short_name": "Skip Pix",
-  "description": "Aplicativo PWA mobile-first de cobranças Pix da Skip",
+  "name": "ROM",
+  "short_name": "ROM",
+  "description": "Aplicativo PWA mobile-first de cobranças Pix — ROM",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0B0B0D",

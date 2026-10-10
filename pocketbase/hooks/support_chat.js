@@ -14,15 +14,23 @@ routerAdd(
         return e.badRequestError('Mensagem é obrigatória')
       }
 
-      const conv = $ai.agent('suporte-skip').getOrCreateConversation({
+      // Priorizar o agente suporte-rom (com fallback para suporte-skip caso ainda não migrado)
+      let agentSlug = 'suporte-rom'
+      try {
+        $ai.agent('suporte-rom')
+      } catch (_) {
+        agentSlug = 'suporte-skip'
+      }
+
+      const conv = $ai.agent(agentSlug).getOrCreateConversation({
         user_id: userId,
         id: body.conversation_id || null,
-        title: body.title || 'Conversa de Suporte',
+        title: body.title || 'Conversa de Suporte ROM',
       })
 
       const stream = body.stream !== false
       if (stream) {
-        const iter = $ai.agent('suporte-skip').chat({
+        const iter = $ai.agent(agentSlug).chat({
           user_id: userId,
           conversation_id: conv.id,
           message: message.trim(),
@@ -34,7 +42,7 @@ routerAdd(
         e.response.header().set('X-Conversation-Id', conv.id)
         return $response.stream(e, iter)
       } else {
-        const result = $ai.agent('suporte-skip').chat({
+        const result = $ai.agent(agentSlug).chat({
           user_id: userId,
           conversation_id: conv.id,
           message: message.trim(),
@@ -78,7 +86,13 @@ routerAdd(
       const userId = e.auth?.id
       if (!userId) return e.unauthorizedError('Autenticação necessária')
       const limit = parseInt(e.requestInfo().query?.limit || '20', 10) || 20
-      return e.json(200, $ai.agent('suporte-skip').listConversations({ user_id: userId, limit }))
+      let agentSlug = 'suporte-rom'
+      try {
+        $ai.agent('suporte-rom')
+      } catch (_) {
+        agentSlug = 'suporte-skip'
+      }
+      return e.json(200, $ai.agent(agentSlug).listConversations({ user_id: userId, limit }))
     } catch (err) {
       return e.json(500, { error: err.message || 'Erro ao listar conversas' })
     }
@@ -94,9 +108,15 @@ routerAdd(
       const userId = e.auth?.id
       if (!userId) return e.unauthorizedError('Autenticação necessária')
       const convId = e.request.pathValue('conversationId')
+      let agentSlug = 'suporte-rom'
+      try {
+        $ai.agent('suporte-rom')
+      } catch (_) {
+        agentSlug = 'suporte-skip'
+      }
       return e.json(
         200,
-        $ai.agent('suporte-skip').listMessages({
+        $ai.agent(agentSlug).listMessages({
           conversation_id: convId,
           user_id: userId,
         }),

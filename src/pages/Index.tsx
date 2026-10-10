@@ -9,7 +9,7 @@ export default function Index() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#0B0B0D] text-[#F6F4EF]">
         <div className="w-10 h-10 rounded-full border-2 border-[#C9A227] border-t-transparent animate-spin mb-3" />
-        <p className="text-xs font-sans text-[#8C6A3F] tracking-widest uppercase">Skip Pix</p>
+        <p className="text-xs font-sans text-[#8C6A3F] tracking-widest uppercase">ROM</p>
       </div>
     )
   }

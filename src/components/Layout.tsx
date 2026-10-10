@@ -156,7 +156,7 @@ export default function Layout() {
             </div>
             <div className="flex flex-col overflow-hidden text-left">
               <span className="text-xs font-semibold text-[#F6F4EF] truncate">
-                {user?.name || 'Usuário Skip'}
+                {user?.name || 'Usuário ROM'}
               </span>
               <span className="text-[10px] text-[#8C6A3F] truncate">{user?.email}</span>
             </div>
@@ -248,19 +248,19 @@ export default function Layout() {
         </footer>
       </div>
 
-      {/* Botão Flutuante de Chat com Assistente Skip */}
+      {/* Botão Flutuante de Chat com Assistente ROM */}
       {location.pathname !== '/chat' && (
         <button
           onClick={() => navigate('/chat')}
           className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#C9A227] to-[#A8861F] text-[#0B0B0D] font-semibold text-xs tracking-wide shadow-[0_8px_24px_rgba(201,162,39,0.4)] hover:shadow-[0_10px_30px_rgba(201,162,39,0.55)] transition-all transform hover:-translate-y-1 active:scale-95 group"
-          title="Falar com Suporte Skip"
-          aria-label="Abrir suporte Skip"
+          title="Falar com Suporte ROM"
+          aria-label="Abrir suporte ROM"
         >
           <div className="relative">
             <MessageCircle className="w-5 h-5" />
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#0B0B0D]" />
           </div>
-          <span className="hidden sm:inline font-sans">Suporte Skip</span>
+          <span className="hidden sm:inline font-sans">Suporte ROM</span>
         </button>
       )}
 
@@ -270,7 +270,7 @@ export default function Layout() {
           <DialogHeader>
             <DialogTitle className="font-serif text-lg text-[#F6F4EF]">Encerrar Sessão</DialogTitle>
             <DialogDescription className="text-[#D6D0C5] text-xs">
-              Tem certeza de que deseja sair da sua conta Skip Pix?
+              Tem certeza de que deseja sair da sua conta ROM?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex gap-2 justify-end mt-4">

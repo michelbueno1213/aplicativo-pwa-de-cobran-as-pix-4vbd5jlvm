@@ -26,8 +26,7 @@ export const ShareChargeModal: React.FC<ShareChargeModalProps> = ({
 
   if (!charge) return null
 
-  const paymentLink =
-    charge.payment_link || `https://pix.skip.app/pay/sim_${charge.id.substring(0, 8)}`
+  const paymentLink = charge.payment_link || `https://rom.app/pay/sim_${charge.id.substring(0, 8)}`
 
   const handleCopy = () => {
     navigator.clipboard.writeText(paymentLink)
@@ -39,7 +38,7 @@ export const ShareChargeModal: React.FC<ShareChargeModalProps> = ({
     const text = encodeURIComponent(
       `Olá, ${charge.customer_name}! Segue o link de pagamento Pix no valor de ${formatCurrency(
         charge.amount_cents,
-      )}:\n${paymentLink}\n\n(Aviso: Cobrança em modo simulado Skip Pix)`,
+      )}:\n${paymentLink}\n\n(Aviso: Cobrança em modo simulado ROM)`,
     )
     window.open(`https://wa.me/?text=${text}`, '_blank')
   }

@@ -12,7 +12,7 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#0B0B0D] text-[#F6F4EF]">
         <div className="w-12 h-12 rounded-full border-2 border-[#C9A227] border-t-transparent animate-spin mb-4" />
         <p className="text-sm font-sans text-[#8C6A3F] tracking-wider uppercase">
-          Carregando Skip Pix...
+          Carregando ROM...
         </p>
       </div>
     )

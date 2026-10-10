@@ -21,7 +21,7 @@ export const Terms: React.FC = () => {
 
         <div className="space-y-4">
           <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1916]">
-            Termos de Uso — Skip Pix
+            Termos de Uso — ROM
           </h1>
           <p className="text-xs text-[#6B6760]">Última atualização: {new Date().getFullYear()}</p>
         </div>
@@ -32,7 +32,7 @@ export const Terms: React.FC = () => {
               1. Natureza do Serviço e Modo Simulado
             </h2>
             <p>
-              O Skip Pix é uma plataforma de gestão e automação de cobranças Pix. Atualmente, a
+              O ROM é uma plataforma de gestão e automação de cobranças Pix. Atualmente, a
               plataforma opera em <strong>Fluxo Simulado</strong>, destinado a testes, validação de
               fluxos comerciais e homologação de rotas de integração. Nenhuma cobrança gerada neste
               modo movimenta moeda fiduciária real no Banco Central do Brasil.

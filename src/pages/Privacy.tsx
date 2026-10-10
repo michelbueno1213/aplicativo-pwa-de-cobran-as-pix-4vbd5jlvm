@@ -21,7 +21,7 @@ export const Privacy: React.FC = () => {
 
         <div className="space-y-4">
           <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1916]">
-            Política de Privacidade — Skip Pix
+            Política de Privacidade — ROM
           </h1>
           <p className="text-xs text-[#6B6760]">Última atualização: {new Date().getFullYear()}</p>
         </div>
@@ -30,7 +30,7 @@ export const Privacy: React.FC = () => {
           <section className="space-y-2">
             <h2 className="font-serif text-base font-bold text-[#1A1916]">1. Dados Coletados</h2>
             <p>
-              Coletamos estritamente as informações necessárias para a geração das ordens de
+              O ROM coleta estritamente as informações necessárias para a geração das ordens de
               cobrança simuladas e identificação dos operadores da conta: nome, e-mail, telefone e
               chave Pix mascarada.
             </p>

@@ -51,7 +51,7 @@ export const SettingsPage: React.FC = () => {
   // Seção Convites de Novos Usuários (Modelo de Acesso por Convite)
   const [inviteName, setInviteName] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
-  const [invitePassword, setInvitePassword] = useState('Skip@2025!')
+  const [invitePassword, setInvitePassword] = useState('Rom@2025!')
   const [inviting, setInviting] = useState(false)
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null)
   const [inviteError, setInviteError] = useState<string | null>(null)

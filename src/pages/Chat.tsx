@@ -28,7 +28,7 @@ export const ChatPage: React.FC = () => {
       id: 'welcome',
       role: 'assistant',
       content:
-        'Olá! Eu sou o assistente de Suporte Skip. Posso esclarecer dúvidas sobre cobranças Pix, como funciona o Modo Simulado, gerenciamento de clientes ou a futura integração com carteira Liquid e DePix. Como posso ajudar você hoje?',
+        'Olá! Eu sou o assistente de Suporte ROM. Posso esclarecer dúvidas sobre cobranças Pix, como funciona o Modo Simulado, gerenciamento de clientes ou a futura integração com carteira Liquid e DePix. Como posso ajudar você hoje?',
       created: new Date().toISOString(),
     },
   ])
@@ -125,7 +125,7 @@ export const ChatPage: React.FC = () => {
 
       // Fallback amigável se a IA estiver sem cota ou indisponível
       const fallbackContent =
-        'Compreendi sua dúvida sobre a plataforma Skip Pix! O modo simulado permite testar emissão e compartilhamento de cobranças. Assim que a provedora Pix for aprovada, você poderá conectar suas chaves de API e receber DePix na carteira Liquid. Se precisar de suporte adicional, entre em contato com nosso time administrativo.'
+        'Compreendi sua dúvida sobre a plataforma ROM! O modo simulado permite testar emissão e compartilhamento de cobranças. Assim que a provedora Pix for aprovada, você poderá conectar suas chaves de API e receber DePix na carteira Liquid. Se precisar de suporte adicional, entre em contato com nosso time administrativo.'
 
       setMessages((prev) =>
         prev.map((m) =>
@@ -154,7 +154,7 @@ export const ChatPage: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-serif text-base sm:text-lg font-bold text-[#F6F4EF]">
-                Suporte Skip
+                Suporte ROM
               </h1>
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
@@ -166,7 +166,7 @@ export const ChatPage: React.FC = () => {
 
         <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1C1A17] text-[#C9A227] border border-[#C9A227]/30 text-xs font-medium">
           <Sparkles className="w-3.5 h-3.5 text-[#C9A227]" />
-          Skip Cloud Agent
+          ROM IA Agent
         </span>
       </div>
 
@@ -235,7 +235,7 @@ export const ChatPage: React.FC = () => {
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
           <Input
             type="text"
-            placeholder="Digite sua dúvida sobre o Skip Pix..."
+            placeholder="Digite sua dúvida sobre o ROM..."
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             disabled={loading}
@@ -258,7 +258,7 @@ export const ChatPage: React.FC = () => {
         </form>
 
         <p className="text-[10px] text-center text-[#8C6A3F] mt-2">
-          Atendimento inteligente com respostas baseadas nas regras do Skip Pix e modo simulado.
+          Atendimento inteligente com respostas baseadas nas regras do ROM e modo simulado.
         </p>
       </div>
     </div>

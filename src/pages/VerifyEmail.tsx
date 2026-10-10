@@ -71,7 +71,7 @@ export const VerifyEmail: React.FC = () => {
             </div>
             <h2 className="font-serif text-xl font-bold text-[#F6F4EF]">Conta Ativada!</h2>
             <p className="text-sm text-[#D6D0C5] leading-relaxed">
-              E-mail verificado com sucesso. Você já pode acessar a plataforma Skip Pix.
+              E-mail verificado com sucesso. Você já pode acessar a plataforma ROM.
             </p>
             <Button
               onClick={() => navigate('/entrar')}
