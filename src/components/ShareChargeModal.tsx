@@ -38,7 +38,7 @@ export const ShareChargeModal: React.FC<ShareChargeModalProps> = ({
     const text = encodeURIComponent(
       `Olá, ${charge.customer_name}! Segue o link de pagamento Pix no valor de ${formatCurrency(
         charge.amount_cents,
-      )}:\n${paymentLink}\n\n(Aviso: Cobrança em modo simulado ROM)`,
+      )}:\n${paymentLink}`,
     )
     window.open(`https://wa.me/?text=${text}`, '_blank')
   }
@@ -52,7 +52,7 @@ export const ShareChargeModal: React.FC<ShareChargeModalProps> = ({
             Compartilhar Cobrança
           </DialogTitle>
           <DialogDescription className="text-xs text-[#6B6760]">
-            Envie o link de pagamento simulado para {charge.customer_name}
+            Envie o link de pagamento para {charge.customer_name}
           </DialogDescription>
         </DialogHeader>
 
@@ -72,20 +72,20 @@ export const ShareChargeModal: React.FC<ShareChargeModalProps> = ({
           )}
         </div>
 
-        {/* Aviso de Modo Simulado */}
-        <div className="p-3 rounded-lg bg-[#FFF3E0] border border-[#B26A00]/25 text-[#B26A00] text-xs flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-          <span className="leading-snug">
-            <strong>Modo simulado:</strong> Cobranças geradas em modo simulado — nada processa
-            pagamento real. Quando a integração com a provedora estiver ativa, os valores serão
-            recebidos em DePix na sua carteira Liquid.
-          </span>
-        </div>
+        {charge.is_simulated && (
+          <div className="p-3 rounded-lg bg-[#FFF3E0] border border-[#B26A00]/25 text-[#B26A00] text-xs flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <span className="leading-snug">
+              <strong>Ambiente de Homologação:</strong> Registro de teste restrito para validação da
+              interface.
+            </span>
+          </div>
+        )}
 
         {/* Campo com Link Copiável */}
         <div className="space-y-1.5 mt-2">
           <label className="text-xs font-semibold text-[#1A1916] uppercase tracking-wider">
-            Link de Pagamento (Simulado)
+            Link de Pagamento
           </label>
           <div className="flex items-center gap-2">
             <input

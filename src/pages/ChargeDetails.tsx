@@ -1,486 +1,460 @@
-import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { chargesService, type ChargeRecord } from '@/services/charges'
-import { formatCurrency, formatDateBr, maskPixKey, maskAddress } from '@/lib/formatters'
-import { StatusBadge } from '@/components/StatusBadge'
-import { GoldConfetti } from '@/components/GoldConfetti'
-import { PixQrCode } from '@/components/PixQrCode'
-import useRealtime from '@/hooks/use-realtime'
+import React, { useEffect, useState, useCallback } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
-  Share2,
-  CheckCircle2,
-  XCircle,
-  Trash2,
   Copy,
   Check,
-  AlertTriangle,
-  Receipt,
+  ExternalLink,
   Clock,
-  ShieldAlert,
-  Wallet,
+  ShieldCheck,
+  CheckCircle2,
+  AlertCircle,
+  RefreshCw,
+  QrCode,
+  Share2,
+  Trash2,
+  Info,
+  Layers,
 } from 'lucide-react'
+import { chargesService, ChargeRecord } from '@/services/charges'
+import { StatusBadge, ChargeStatus } from '@/components/StatusBadge'
+import { formatCurrency, formatDateBr } from '@/lib/formatters'
+import { PixQrCode } from '@/components/PixQrCode'
+import { useRealtime } from '@/hooks/use-realtime'
+import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { GoldConfetti } from '@/components/GoldConfetti'
 
 export const ChargeDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const isAdmin = Boolean(user?.is_admin || user?.role === 'admin')
 
   const [charge, setCharge] = useState<ChargeRecord | null>(null)
   const [loading, setLoading] = useState(true)
-  const [actionLoading, setActionLoading] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [copiedPixCode, setCopiedPixCode] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
+  const [syncNotice, setSyncNotice] = useState<string | null>(null)
 
-  const [cancelModalOpen, setCancelModalOpen] = useState(false)
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-
-  const loadCharge = async () => {
+  const loadCharge = useCallback(async () => {
     if (!id) return
     try {
-      const rec = await chargesService.getById(id)
-      setCharge(rec)
+      const data = await chargesService.getById(id)
+      setCharge(data)
+      if (data.status === 'depix_sent' || data.status === 'approved' || data.status === 'paid') {
+        setShowConfetti(true)
+      }
     } catch {
-      navigate('/cobrancas')
+      setCharge(null)
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
 
   useEffect(() => {
     loadCharge()
-  }, [id])
+  }, [loadCharge])
 
-  useRealtime('charges', (e) => {
-    if (e.record.id === id) {
-      setCharge(e.record as ChargeRecord)
+  // Realtime updates
+  useRealtime<ChargeRecord>('charges', (e) => {
+    if (e.record && e.record.id === id) {
+      if (e.action === 'update') {
+        setCharge(e.record)
+        if (
+          e.record.status === 'depix_sent' ||
+          e.record.status === 'approved' ||
+          e.record.status === 'paid'
+        ) {
+          setShowConfetti(true)
+        }
+      }
+      if (e.action === 'delete') {
+        navigate('/cobrancas')
+      }
     }
   })
 
-  if (loading) {
-    return (
-      <div className="py-20 text-center">
-        <div className="w-8 h-8 rounded-full border-2 border-[#C9A227] border-t-transparent animate-spin mx-auto mb-2" />
-        <p className="text-xs text-[#6B6760]">Carregando detalhes da cobrança...</p>
-      </div>
-    )
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedKey(key)
+    setTimeout(() => setCopiedKey(null), 2500)
   }
 
-  if (!charge) return null
-
-  const paymentLink = charge.payment_link || `https://rom.app/pay/sim_${charge.id.substring(0, 8)}`
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(paymentLink)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2500)
-  }
-
-  const handleShareWhatsApp = () => {
-    const text = encodeURIComponent(
-      `Olá, ${charge.customer_name}! Segue o link de pagamento Pix no valor de ${formatCurrency(
-        charge.amount_cents,
-      )}:\n${paymentLink}\n\n(Aviso: Cobrança em modo simulado ROM)`,
-    )
-    window.open(`https://wa.me/?text=${text}`, '_blank')
-  }
-
-  const handleMarkAsPaid = async () => {
-    setActionLoading(true)
+  // Sincronização via Eulen API
+  const handleSync = async () => {
+    if (!id) return
+    setSyncing(true)
+    setSyncNotice(null)
     try {
-      const updated = await chargesService.markAsPaid(charge.id)
+      const res = await chargesService.syncStatus(id)
+      if (res && res.charge) {
+        setCharge(res.charge)
+        setSyncNotice('Status sincronizado com a provedora de pagamentos.')
+      } else {
+        setSyncNotice('Cobrança aguardando confirmação da rede bancária Pix.')
+      }
+    } catch {
+      setSyncNotice('Consulta direta disponível após ativação completa da provedora.')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  // Ações de simulação permitidas APENAS para administradores em cobranças com is_simulated = true
+  const handleSimulatePayment = async () => {
+    if (!charge || !isAdmin || !charge.is_simulated) return
+    try {
+      const updated = await chargesService.markAsPaidSimulated(charge.id)
       setCharge(updated)
       setShowConfetti(true)
-      setTimeout(() => setShowConfetti(false), 2500)
-    } catch {
-      // Ignora erro
-    } finally {
-      setActionLoading(false)
+    } catch (err) {
+      console.error(err)
     }
   }
 
-  const handleCancel = async () => {
-    setActionLoading(true)
+  const handleSimulateCancel = async () => {
+    if (!charge || !isAdmin || !charge.is_simulated) return
     try {
-      const updated = await chargesService.cancel(charge.id)
+      const updated = await chargesService.cancelSimulated(charge.id)
       setCharge(updated)
-      setCancelModalOpen(false)
-    } catch {
-      // Ignora erro
-    } finally {
-      setActionLoading(false)
+    } catch (err) {
+      console.error(err)
     }
   }
 
-  const handleDelete = async () => {
-    setActionLoading(true)
-    try {
-      await chargesService.delete(charge.id)
-      setDeleteModalOpen(false)
-      navigate('/cobrancas')
-    } catch {
-      // Ignora erro
-    } finally {
-      setActionLoading(false)
-    }
+  if (loading) {
+    return (
+      <div className="p-12 text-center">
+        <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#C5A059] mb-2" />
+        <p className="text-sm text-[#73726C]">Carregando detalhes da cobrança...</p>
+      </div>
+    )
   }
 
-  const isPending = charge.status === 'pending'
+  if (!charge) {
+    return (
+      <div className="max-w-xl mx-auto text-center py-12 space-y-4">
+        <AlertCircle className="w-10 h-10 text-red-500 mx-auto" />
+        <h2 className="text-lg font-bold text-[#141413]">Cobrança não encontrada</h2>
+        <p className="text-sm text-[#73726C]">
+          A cobrança solicitada não existe ou pertence a outro comerciante.
+        </p>
+        <Button onClick={() => navigate('/cobrancas')} variant="outline">
+          Voltar para a lista
+        </Button>
+      </div>
+    )
+  }
+
+  const isCompleted =
+    charge.status === 'depix_sent' || charge.status === 'approved' || charge.status === 'paid'
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in relative">
+    <div className="max-w-3xl mx-auto space-y-6 pb-12">
       <GoldConfetti active={showConfetti} />
 
-      {/* Navegação Voltar */}
+      {/* Navegação Superior */}
       <div className="flex items-center justify-between">
-        <Link
-          to="/cobrancas"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-[#8C6A3F] hover:text-[#C9A227] transition-colors"
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/cobrancas')}
+          className="text-[#57564F] hover:text-[#141413] -ml-2 text-sm"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4 mr-1.5" />
           Voltar para Cobranças
-        </Link>
+        </Button>
 
-        <button
-          onClick={() => setDeleteModalOpen(true)}
-          className="p-2 text-[#8C6A3F] hover:text-[#B3261E] hover:bg-[#B3261E]/10 rounded-lg transition-colors"
-          title="Excluir cobrança"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {charge.eulen_deposit_id && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSync}
+              disabled={syncing}
+              className="border-[#D6D0C5] text-xs"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${syncing ? 'animate-spin' : ''}`} />
+              Sincronizar
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Cartão de Detalhes da Cobrança */}
-      <div className="bg-white rounded-2xl border border-[#D6D0C5] p-6 sm:p-8 shadow-sm space-y-6">
-        {/* Cabeçalho do Cartão: Cliente e Status */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-[#E6E1D8]">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#8C6A3F] to-[#C9A227] text-[#0B0B0D] font-serif font-bold text-sm flex items-center justify-center shadow-sm">
-              {charge.customer_name ? charge.customer_name[0].toUpperCase() : 'C'}
-            </div>
-            <div>
-              <h1 className="font-serif text-xl font-bold text-[#1A1916]">
-                {charge.customer_name}
-              </h1>
-              <p className="text-xs text-[#6B6760]">Emitido em {formatDateBr(charge.created)}</p>
-            </div>
-          </div>
+      {/* Notificação de Sincronização */}
+      {syncNotice && (
+        <Alert className="border-amber-400 bg-amber-50 text-amber-900 text-xs py-2.5">
+          <Info className="w-4 h-4 text-amber-700" />
+          <AlertDescription>{syncNotice}</AlertDescription>
+        </Alert>
+      )}
 
-          <StatusBadge status={charge.status} className="self-start sm:self-center" />
-        </div>
-
-        {/* Valor Grande Destacado */}
-        <div className="text-center py-4 bg-[#FAF8F3] rounded-2xl border border-[#E6E1D8]">
-          <span className="text-xs font-sans text-[#8C6A3F] uppercase tracking-wider block mb-1">
-            Valor da Cobrança Pix
-          </span>
-          <span className="font-serif text-3xl sm:text-4xl font-extrabold text-[#1A1916] tracking-tight">
-            {formatCurrency(charge.amount_cents)}
-          </span>
-          <span className="text-[11px] text-[#8C6A3F] block mt-1">
-            Pagador quita via Pix • Recebimento do vendedor em DePix (Liquid)
-          </span>
-          {charge.paid_at && (
-            <p className="text-xs text-[#2E7D32] mt-1.5 font-medium">
-              Liquidado em {formatDateBr(charge.paid_at)}
-            </p>
-          )}
-        </div>
-
-        {/* Bloco de Validade e Carteira Liquid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div className="p-3.5 rounded-xl bg-[#FAF8F3] border border-[#E6E1D8] flex items-center gap-2.5">
-            <Clock className="w-4 h-4 text-[#8C6A3F] flex-shrink-0" />
-            <div>
-              <span className="text-[10px] uppercase tracking-wider text-[#8C6A3F] font-semibold block">
-                Prazo de Validade
-              </span>
-              <span className="text-[#1A1916] font-medium">
-                {charge.expires_at ? formatDateBr(charge.expires_at) : '24 horas após emissão'}
+      {/* Painel Restrito de Homologação (exibido APENAS se o registro for is_simulated e o usuário for admin) */}
+      {charge.is_simulated && isAdmin && (
+        <div className="p-4 rounded-xl border border-amber-300 bg-amber-50/70 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-amber-900">
+              <ShieldCheck className="w-4 h-4 text-amber-700" />
+              <span className="text-xs font-semibold uppercase tracking-wider">
+                Ambiente de Homologação (Apenas Administrador)
               </span>
             </div>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-[#FAF8F3] border border-[#E6E1D8] flex items-center gap-2.5">
-            <Wallet className="w-4 h-4 text-[#8C6A3F] flex-shrink-0" />
-            <div className="overflow-hidden">
-              <span className="text-[10px] uppercase tracking-wider text-[#8C6A3F] font-semibold block">
-                Carteira Liquid de Recebimento
-              </span>
-              <span className="font-mono text-[#1A1916] font-medium truncate block">
-                {charge.liquid_address ? maskAddress(charge.liquid_address) : 'Padrão da conta'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Exibição do QR Code Pix e Código Copia e Cola */}
-        <div className="p-5 rounded-2xl bg-[#FAF8F3] border border-[#E6E1D8] space-y-4">
-          <div className="text-center space-y-1">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-[#1A1916]">
-              QR Code Pix para Pagamento
-            </h2>
-            <p className="text-[11px] text-[#6B6760]">
-              O pagador lê o QR Code no app do banco e você recebe em DePix na Liquid
-            </p>
-          </div>
-
-          <div className="flex flex-col items-center justify-center py-2 space-y-3">
-            <PixQrCode
-              value={
-                charge.pix_copia_cola ||
-                `00020126580014br.gov.bcb.pix2536simulado-rom.app/pix/${charge.id}520400005303986540${(
-                  charge.amount_cents / 100
-                ).toFixed(2)}5802BR5925ROM SIMULADO NAO PAGAR6009SAO PAULO62070503***6304SIMU`
-              }
-              size={200}
-              isSimulated={charge.payment_method === 'simulated'}
-            />
-
-            <div className="max-w-md w-full p-2.5 rounded-xl bg-[#FFF3E0] border border-[#C9A227]/40 text-center">
-              <span className="text-[11px] font-semibold text-[#8C6A3F] flex items-center justify-center gap-1">
-                <AlertTriangle className="w-3.5 h-3.5 text-[#C9A227]" />
-                Modo Simulado — QR Code e payload fictícios (sem cobrança bancária real)
-              </span>
-            </div>
-          </div>
-
-          {/* Código Pix Copia e Cola */}
-          <div className="space-y-1.5 pt-2">
-            <label className="text-xs font-semibold text-[#1A1916] uppercase tracking-wider block">
-              Código Pix Copia e Cola
-            </label>
-            <div className="relative">
-              <textarea
-                readOnly
-                rows={2}
-                value={
-                  charge.pix_copia_cola ||
-                  `00020126580014br.gov.bcb.pix2536simulado-rom.app/pix/${charge.id}520400005303986540${(
-                    charge.amount_cents / 100
-                  ).toFixed(2)}5802BR5925ROM SIMULADO NAO PAGAR6009SAO PAULO62070503***6304SIMU`
-                }
-                className="w-full p-2.5 bg-white border border-[#D6D0C5] rounded-xl text-xs font-mono text-[#1A1916] select-all focus:outline-none focus:ring-1 focus:ring-[#C9A227] break-all resize-none"
-              />
-            </div>
-            <Button
-              type="button"
-              onClick={() => {
-                const code =
-                  charge.pix_copia_cola ||
-                  `00020126580014br.gov.bcb.pix2536simulado-rom.app/pix/${charge.id}520400005303986540${(
-                    charge.amount_cents / 100
-                  ).toFixed(2)}5802BR5925ROM SIMULADO NAO PAGAR6009SAO PAULO62070503***6304SIMU`
-                navigator.clipboard.writeText(code)
-                setCopiedPixCode(true)
-                setTimeout(() => setCopiedPixCode(false), 2500)
-              }}
-              className={`w-full h-10 text-xs font-semibold rounded-xl transition-all border-0 shadow-sm flex items-center justify-center gap-1.5 ${
-                copiedPixCode
-                  ? 'bg-[#2E7D32] hover:bg-[#2E7D32] text-white'
-                  : 'bg-gradient-to-r from-[#C9A227] to-[#A8861F] text-[#0B0B0D] hover:from-[#F5D77F] hover:to-[#C9A227]'
-              }`}
-            >
-              {copiedPixCode ? (
-                <>
-                  <Check className="w-3.5 h-3.5" />
-                  Copiado com Sucesso!
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" />
-                  Copiar Código Pix Copia e Cola
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-
-        {/* Metadados da Cobrança */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-          <div className="p-3.5 rounded-xl bg-[#F6F4EF] border border-[#E6E1D8]">
-            <span className="text-[#8C6A3F] uppercase tracking-wider text-[10px] block font-semibold">
-              Método / Liquidação
-            </span>
-            <span className="text-[#1A1916] font-medium mt-0.5 block">
-              {charge.payment_method === 'simulated'
-                ? 'Pix Simulado (Teste) → DePix Liquid'
-                : 'Pix Real → DePix Liquid'}
+            <span className="text-[11px] font-medium bg-amber-200 text-amber-900 px-2 py-0.5 rounded">
+              Registro de Teste
             </span>
           </div>
-
-          <div className="p-3.5 rounded-xl bg-[#F6F4EF] border border-[#E6E1D8]">
-            <span className="text-[#8C6A3F] uppercase tracking-wider text-[10px] block font-semibold">
-              Valor Líquido Estimado em DePix
-            </span>
-            <span className="text-[#1A1916] font-medium mt-0.5 block">
-              {charge.net_depix_amount_cents
-                ? `${(charge.net_depix_amount_cents / 100).toFixed(2)} DePix`
-                : `${(charge.amount_cents / 100).toFixed(2)} DePix (estimado)`}
-            </span>
-          </div>
-
-          {charge.description && (
-            <div className="sm:col-span-2 p-3.5 rounded-xl bg-[#F6F4EF] border border-[#E6E1D8]">
-              <span className="text-[#8C6A3F] uppercase tracking-wider text-[10px] block font-semibold">
-                Descrição
-              </span>
-              <p className="text-[#1A1916] mt-0.5 leading-relaxed">{charge.description}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Link de Pagamento Simulado com Copiar */}
-        <div className="space-y-1.5 pt-2">
-          <label className="text-xs font-semibold text-[#1A1916] uppercase tracking-wider">
-            Link de Pagamento Web (Simulado)
-          </label>
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              readOnly
-              value={paymentLink}
-              className="flex-1 px-3.5 py-2.5 bg-[#FAF8F3] border border-[#D6D0C5] rounded-xl text-xs font-mono text-[#1A1916] select-all focus:outline-none focus:ring-1 focus:ring-[#C9A227]"
-            />
-            <Button
-              type="button"
-              onClick={handleCopyLink}
-              className={`h-10 px-4 text-xs font-medium transition-all ${
-                copied
-                  ? 'bg-[#2E7D32] hover:bg-[#2E7D32] text-white border-0'
-                  : 'bg-white border border-[#D6D0C5] text-[#1A1916] hover:bg-[#FAF8F3]'
-              }`}
-            >
-              {copied ? (
-                <>
-                  <Check className="w-3.5 h-3.5 mr-1 text-white" /> Copiado!
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5 mr-1" /> Copiar Link
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-
-        {/* Ações da Cobrança */}
-        <div className="pt-2 space-y-2.5">
-          {/* Compartilhar via WhatsApp */}
-          <Button
-            type="button"
-            onClick={handleShareWhatsApp}
-            className="w-full h-12 bg-[#25D366] hover:bg-[#20bd5a] text-white font-medium text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 shadow-sm border-0"
-          >
-            <Share2 className="w-4 h-4" />
-            Compartilhar via WhatsApp
-          </Button>
-
-          {/* Marcar como Paga e Cancelar (se pendente) */}
-          {isPending && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <Button
-                type="button"
-                disabled={actionLoading}
-                onClick={handleMarkAsPaid}
-                className="h-11 bg-gradient-to-r from-[#C9A227] to-[#A8861F] hover:from-[#F5D77F] hover:to-[#C9A227] text-[#0B0B0D] font-semibold text-xs rounded-xl border-0 flex items-center justify-center gap-2 shadow-sm"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                Marcar como Paga
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                disabled={actionLoading}
-                onClick={() => setCancelModalOpen(true)}
-                className="h-11 border-[#B3261E]/40 text-[#B3261E] hover:bg-[#B3261E]/10 text-xs rounded-xl flex items-center justify-center gap-2"
-              >
-                <XCircle className="w-4 h-4" />
-                Cancelar Cobrança
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {/* Nota de Rodapé do Cartão */}
-        <div className="pt-4 border-t border-[#E6E1D8] text-center">
-          <p className="text-[11px] text-[#8C6A3F] flex items-center justify-center gap-1.5">
-            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-            Cobranças geradas em modo simulado — nada processa pagamento real. Quando a integração
-            com a provedora estiver ativa, os valores serão recebidos em DePix na sua carteira
-            Liquid.
+          <p className="text-xs text-amber-800 leading-relaxed">
+            Este registro está arquivado no ambiente de testes. Em produção, os pagamentos são
+            processados automaticamente via webhook e conciliação bancária — alterações manuais são
+            estritamente bloqueadas.
           </p>
+          {charge.status === 'pending' && (
+            <div className="flex items-center gap-2 pt-1">
+              <Button
+                size="sm"
+                onClick={handleSimulatePayment}
+                className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs"
+              >
+                Simular Pagamento Pix e Envio DePix
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSimulateCancel}
+                className="border-red-300 text-red-700 hover:bg-red-50 text-xs"
+              >
+                Simular Cancelamento
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Cartão Principal da Cobrança */}
+      <div className="bg-[#FFFFFF] border border-[#D6D0C5] rounded-xl shadow-xs overflow-hidden">
+        {/* Topo / Header da Cobrança */}
+        <div className="p-6 border-b border-[#E6E4DD] flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#FAF8F5]">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-medium text-[#73726C] uppercase tracking-wider">
+                Cobrança Pix
+              </span>
+              <StatusBadge status={charge.status as ChargeStatus} />
+            </div>
+            <h2 className="font-serif text-3xl font-bold text-[#141413]">
+              {formatCurrency(charge.amount_cents)}
+            </h2>
+            <p className="text-xs text-[#73726C] mt-1">
+              Criada em {formatDateBr(charge.created)} para{' '}
+              <strong>{charge.customer_name || 'Cliente'}</strong>
+            </p>
+          </div>
+
+          <div className="text-left sm:text-right text-xs space-y-1">
+            <div className="text-[#73726C]">Liquidação Liquid</div>
+            <div className="font-semibold text-emerald-800">
+              {formatCurrency(charge.net_depix_amount_cents || charge.amount_cents)} DePix
+            </div>
+            <div className="text-[11px] text-[#8C8A7B]">1 BRL = 1 DePix</div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Se estiver pendente, exibir dados do Pix Copia e Cola / QR Code */}
+          {charge.status === 'pending' ? (
+            <div className="space-y-6">
+              {/* QR Code */}
+              <div className="flex flex-col items-center justify-center p-6 bg-[#FAF8F5] border border-[#D6D0C5] rounded-xl text-center">
+                <PixQrCode
+                  value={charge.pix_copia_cola || `https://rom.app/pay/${charge.id}`}
+                  size={220}
+                />
+                <p className="text-xs text-[#73726C] mt-4 max-w-xs">
+                  Escaneie no aplicativo do seu banco para pagar via Pix
+                </p>
+              </div>
+
+              {/* Pix Copia e Cola */}
+              {charge.pix_copia_cola && (
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-[#141413] uppercase tracking-wider">
+                    Código Pix Copia e Cola
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={charge.pix_copia_cola}
+                      className="flex-1 font-mono text-xs bg-[#FAF8F5] border border-[#D6D0C5] rounded-lg px-3 py-2.5 text-[#57564F] select-all truncate"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(charge.pix_copia_cola!, 'copiacola')}
+                      className="border-[#D6D0C5] shrink-0"
+                    >
+                      {copiedKey === 'copiacola' ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600 mr-1.5" />
+                          Copiado
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 mr-1.5" />
+                          Copiar
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Link de Pagamento */}
+              {charge.payment_link && (
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-[#141413] uppercase tracking-wider">
+                    Link de Pagamento
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={charge.payment_link}
+                      className="flex-1 text-xs bg-[#FAF8F5] border border-[#D6D0C5] rounded-lg px-3 py-2.5 text-[#57564F] truncate select-all"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(charge.payment_link!, 'link')}
+                      className="border-[#D6D0C5] shrink-0"
+                    >
+                      {copiedKey === 'link' ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600 mr-1.5" />
+                          Copiado
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 mr-1.5" />
+                          Copiar
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : isCompleted ? (
+            /* Estado Pago / DePix Enviado */
+            <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-xl space-y-4 text-emerald-950">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
+                <div>
+                  <h4 className="font-semibold text-sm">
+                    {charge.status === 'depix_sent'
+                      ? 'DePix Enviado com Sucesso!'
+                      : 'Pagamento Pix Confirmado'}
+                  </h4>
+                  <p className="text-xs text-emerald-800 mt-0.5">
+                    {charge.status === 'depix_sent'
+                      ? 'A liquidação foi transmitida diretamente para o seu endereço Liquid na blockchain.'
+                      : 'O pagamento foi confirmado e a provedora está transmitindo os tokens DePix.'}
+                  </p>
+                </div>
+              </div>
+
+              {charge.blockchain_tx_id && (
+                <div className="pt-2 border-t border-emerald-200/80">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">
+                    ID da Transação Liquid (Blockchain TxID):
+                  </span>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="font-mono text-xs bg-white/70 px-2.5 py-1.5 rounded border border-emerald-300 text-emerald-900 truncate flex-1 select-all">
+                      {charge.blockchain_tx_id}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                      className="border-emerald-300 bg-white hover:bg-emerald-50 text-emerald-900 text-xs shrink-0"
+                    >
+                      <a
+                        href={`https://blockstream.info/liquid/tx/${charge.blockchain_tx_id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                        Explorador
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Outros Estados (Cancelada, Expirada, Retida) */
+            <div className="p-5 bg-[#FAF8F5] border border-[#D6D0C5] rounded-xl text-center space-y-2">
+              <AlertCircle className="w-6 h-6 text-[#8C8A7B] mx-auto" />
+              <p className="text-sm font-semibold text-[#141413]">
+                Esta cobrança está com status {charge.status}
+              </p>
+              <p className="text-xs text-[#73726C]">
+                Operações finalizadas ou canceladas não aceitam novos pagamentos.
+              </p>
+            </div>
+          )}
+
+          {/* Dados Técnicos e Liquidação */}
+          <div className="border-t border-[#E6E4DD] pt-6 space-y-4">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-[#73726C]">
+              Dados de Recebimento
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="p-3 bg-[#FAF8F5] rounded-lg border border-[#D6D0C5] space-y-1">
+                <span className="text-[#8C8A7B]">Carteira Liquid do Comerciante:</span>
+                <p className="font-mono text-[11px] text-[#141413] break-all select-all font-medium">
+                  {charge.liquid_address || 'Não informada'}
+                </p>
+              </div>
+
+              <div className="p-3 bg-[#FAF8F5] rounded-lg border border-[#D6D0C5] space-y-1">
+                <span className="text-[#8C8A7B]">Identificador da Operação (Eulen ID):</span>
+                <p className="font-mono text-[11px] text-[#141413] break-all font-medium">
+                  {charge.eulen_deposit_id ||
+                    (charge.is_simulated ? 'SIMULADO' : 'Aguardando provedora')}
+                </p>
+              </div>
+
+              {charge.payer_name && (
+                <div className="p-3 bg-[#FAF8F5] rounded-lg border border-[#D6D0C5] space-y-1">
+                  <span className="text-[#8C8A7B]">Nome Oficial do Pagador (Pix):</span>
+                  <p className="text-[11px] text-[#141413] font-medium">{charge.payer_name}</p>
+                </div>
+              )}
+
+              {charge.bank_tx_id && (
+                <div className="p-3 bg-[#FAF8F5] rounded-lg border border-[#D6D0C5] space-y-1">
+                  <span className="text-[#8C8A7B]">ID da Transação Bancária (Pix):</span>
+                  <p className="font-mono text-[11px] text-[#141413] truncate font-medium">
+                    {charge.bank_tx_id}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {charge.description && (
+              <div className="p-3 bg-[#FAF8F5] rounded-lg border border-[#D6D0C5] text-xs">
+                <span className="text-[#8C8A7B] block mb-1">Descrição:</span>
+                <p className="text-[#141413]">{charge.description}</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Modal de Confirmação de Cancelamento */}
-      <Dialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>
-        <DialogContent className="bg-white border border-[#D6D0C5] text-[#1A1916] max-w-sm rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-serif text-lg font-bold text-[#1A1916]">
-              Cancelar Cobrança?
-            </DialogTitle>
-            <DialogDescription className="text-xs text-[#6B6760]">
-              O status será alterado para cancelado e o cliente não poderá mais simular o pagamento.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex gap-2 justify-end mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setCancelModalOpen(false)}
-              className="border-[#D6D0C5] text-xs"
-            >
-              Voltar
-            </Button>
-            <Button
-              onClick={handleCancel}
-              className="bg-[#B3261E] hover:bg-[#962019] text-white text-xs border-0"
-            >
-              Confirmar Cancelamento
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de Confirmação de Exclusão */}
-      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        <DialogContent className="bg-white border border-[#D6D0C5] text-[#1A1916] max-w-sm rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-serif text-lg font-bold text-[#B3261E] flex items-center gap-2">
-              <Trash2 className="w-5 h-5" />
-              Excluir Cobrança
-            </DialogTitle>
-            <DialogDescription className="text-xs text-[#6B6760]">
-              Esta ação removerá o registro permanentemente do seu histórico. Deseja prosseguir?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex gap-2 justify-end mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setDeleteModalOpen(false)}
-              className="border-[#D6D0C5] text-xs"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleDelete}
-              className="bg-[#B3261E] hover:bg-[#962019] text-white text-xs border-0"
-            >
-              Excluir Registro
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

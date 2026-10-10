@@ -1,330 +1,341 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { chargesService, type ChargeRecord } from '@/services/charges'
-import { formatCurrency, formatDateBr, maskPixKey } from '@/lib/formatters'
-import { StatusBadge } from '@/components/StatusBadge'
-import { ShareChargeModal } from '@/components/ShareChargeModal'
-import useRealtime from '@/hooks/use-realtime'
 import {
   Plus,
   Search,
-  Share2,
-  ChevronLeft,
-  ChevronRight,
   Filter,
-  Receipt,
   ArrowUpDown,
+  RefreshCw,
+  Clock,
+  Layers,
+  Info,
+  ShieldAlert,
+  SlidersHorizontal,
 } from 'lucide-react'
+import { chargesService, ChargeRecord } from '@/services/charges'
+import { StatusBadge, ChargeStatus } from '@/components/StatusBadge'
+import { formatCurrency, formatDateBr } from '@/lib/formatters'
+import { ShareChargeModal } from '@/components/ShareChargeModal'
+import { useRealtime } from '@/hooks/use-realtime'
+import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export const ChargesList: React.FC = () => {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const isAdmin = Boolean(user?.is_admin || user?.role === 'admin')
 
   const [charges, setCharges] = useState<ChargeRecord[]>([])
-  const [totalItems, setTotalItems] = useState(0)
-  const [page, setPage] = useState(1)
-  const perPage = 10
-
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [search, setSearch] = useState('')
-  const [sortOrder, setSortOrder] = useState<'-created' | 'created'>('-created')
   const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [search, setSearch] = useState('')
+  const [sortOrder, setSortOrder] = useState<'-created' | '+created'>('-created')
+  const [shareCharge, setShareCharge] = useState<ChargeRecord | null>(null)
+  const [isShareOpen, setIsShareOpen] = useState(false)
+  const [viewEnvironment, setViewEnvironment] = useState<'production' | 'homologation'>(
+    'production',
+  )
 
-  const [selectedChargeForShare, setSelectedChargeForShare] = useState<ChargeRecord | null>(null)
-  const [shareModalOpen, setShareModalOpen] = useState(false)
-
-  const loadCharges = async () => {
+  const loadCharges = useCallback(async () => {
     setLoading(true)
     try {
-      // Montar filtro do PocketBase
-      const filters: string[] = []
-      if (statusFilter !== 'all') {
-        filters.push(`status = "${statusFilter}"`)
-      }
-      if (search.trim()) {
-        filters.push(`customer_name ~ "${search.trim()}"`)
+      const conditions: string[] = []
+
+      if (statusFilter && statusFilter !== 'all') {
+        conditions.push(`status = '${statusFilter}'`)
       }
 
-      const filterString = filters.join(' && ')
+      if (search.trim()) {
+        const sanitized = search.trim().replace(/['"\\]/g, '')
+        conditions.push(
+          `(customer_name ~ '${sanitized}' || description ~ '${sanitized}' || eulen_deposit_id ~ '${sanitized}' || blockchain_tx_id ~ '${sanitized}')`,
+        )
+      }
+
       const res = await chargesService.list({
-        page,
-        perPage,
-        filter: filterString,
+        page: 1,
+        perPage: 50,
+        filter: conditions.join(' && '),
         sort: sortOrder,
+        includeSimulated: viewEnvironment === 'homologation' && isAdmin,
       })
 
       setCharges(res.items)
-      setTotalItems(res.totalItems)
     } catch {
-      // Ignora erro
+      setCharges([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [statusFilter, search, sortOrder, viewEnvironment, isAdmin])
 
   useEffect(() => {
     loadCharges()
-  }, [page, statusFilter, sortOrder])
+  }, [loadCharges])
 
-  // Recarregar com debounce na busca
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setPage(1)
-      loadCharges()
-    }, 300)
-    return () => clearTimeout(t)
-  }, [search])
-
-  // Realtime updates
-  useRealtime('charges', () => {
+  // Escuta atualizações de cobranças em tempo real
+  useRealtime<ChargeRecord>('charges', () => {
     loadCharges()
   })
 
-  const totalPages = Math.ceil(totalItems / perPage) || 1
-
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Cabeçalho */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#D6D0C5]/60">
+    <div className="space-y-6">
+      {/* Aviso oficial de integração pendente para a emissão de cobranças Pix */}
+      <div className="rounded-xl border border-amber-500/30 bg-[#FFFDF5] p-4 text-[#7A4B00] shadow-xs">
+        <div className="flex items-start gap-3">
+          <Info className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+          <div className="text-sm">
+            <p className="font-semibold text-[#663C00]">
+              Em breve: geração de cobranças Pix. Estamos finalizando nossa integração com a
+              provedora de pagamentos.
+            </p>
+            <p className="text-xs text-[#8F5900] mt-1">
+              Arquitetura de pagamentos Pix com liquidação direta em DePix na rede Liquid para cada
+              comerciante.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Cabeçalho da página */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1916]">
+          <h1 className="font-serif text-2xl md:text-3xl font-bold text-[#141413]">
             Cobranças Pix
           </h1>
-          <p className="text-xs sm:text-sm text-[#6B6760] font-sans mt-0.5">
-            Gerencie e acompanhe todos os links de cobrança gerados
+          <p className="text-sm text-[#73726C] mt-1">
+            {viewEnvironment === 'homologation'
+              ? 'Ambiente restrito de homologação para testes de administradores'
+              : 'Histórico de operações de produção e recebimento em carteiras Liquid'}
           </p>
         </div>
 
-        <Link to="/cobrancas/nova">
-          <Button className="h-11 px-5 bg-gradient-to-r from-[#C9A227] to-[#A8861F] hover:from-[#F5D77F] hover:to-[#C9A227] text-[#0B0B0D] font-semibold text-xs tracking-wider uppercase rounded-xl shadow-md border-0 flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Nova Cobrança
+        <div className="flex items-center gap-2">
+          {/* Seletor restrito a administradores para alternar ambiente de homologação */}
+          {isAdmin && (
+            <div className="flex items-center gap-1.5 p-1 bg-[#F1EFEA] border border-[#D6D0C5] rounded-lg text-xs">
+              <button
+                type="button"
+                onClick={() => setViewEnvironment('production')}
+                className={`px-2.5 py-1 rounded font-medium transition-colors ${
+                  viewEnvironment === 'production'
+                    ? 'bg-[#141413] text-[#FAF8F5]'
+                    : 'text-[#57564F] hover:text-[#141413]'
+                }`}
+              >
+                Produção
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewEnvironment('homologation')}
+                className={`px-2.5 py-1 rounded font-medium flex items-center gap-1 transition-colors ${
+                  viewEnvironment === 'homologation'
+                    ? 'bg-amber-600 text-white'
+                    : 'text-amber-800 hover:text-amber-900'
+                }`}
+              >
+                <ShieldAlert className="w-3 h-3" />
+                Homologação
+              </button>
+            </div>
+          )}
+
+          <Button
+            asChild
+            className="bg-[#C5A059] hover:bg-[#B38F46] text-[#141413] font-semibold shadow-xs"
+          >
+            <Link to="/cobrancas/nova">
+              <Plus className="w-4 h-4 mr-1.5" />
+              Nova Cobrança
+            </Link>
           </Button>
-        </Link>
+        </div>
       </div>
 
       {/* Barra de Filtros e Busca */}
-      <div className="bg-white p-4 rounded-2xl border border-[#D6D0C5] shadow-xs flex flex-col md:flex-row items-center gap-3">
-        {/* Campo de Busca por Cliente */}
-        <div className="relative w-full md:flex-1">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8C6A3F]" />
-          <Input
-            type="text"
-            placeholder="Buscar por nome do cliente..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 h-10 bg-[#FAF8F3] border-[#D6D0C5] text-xs text-[#1A1916] rounded-xl placeholder:text-[#6B6760]"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          {/* Select de Status */}
-          <div className="relative flex-1 md:w-44">
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value)
-                setPage(1)
-              }}
-              className="w-full h-10 px-3 bg-[#FAF8F3] border border-[#D6D0C5] text-xs text-[#1A1916] rounded-xl font-medium focus:outline-none focus:ring-1 focus:ring-[#C9A227]"
-            >
-              <option value="all">Todos os status</option>
-              <option value="pending">Pendente</option>
-              <option value="paid">Paga</option>
-              <option value="expired">Expirada</option>
-              <option value="cancelled">Cancelada</option>
-            </select>
+      <div className="bg-[#FFFFFF] border border-[#D6D0C5] rounded-xl p-4 shadow-xs space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+          {/* Campo de Busca */}
+          <div className="relative sm:col-span-6 md:col-span-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8C8A7B]" />
+            <Input
+              type="text"
+              placeholder="Buscar por cliente, descrição ou ID Eulen..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 bg-[#FAF8F5] border-[#D6D0C5] text-[#141413] placeholder:text-[#8C8A7B] focus:border-[#C5A059]"
+            />
           </div>
 
-          {/* Alternar Ordenação */}
-          <Button
-            variant="outline"
-            onClick={() => setSortOrder(sortOrder === '-created' ? 'created' : '-created')}
-            className="h-10 px-3 bg-[#FAF8F3] border-[#D6D0C5] text-xs text-[#1A1916] rounded-xl flex items-center gap-1.5"
-            title="Alternar ordenação por data"
-          >
-            <ArrowUpDown className="w-3.5 h-3.5 text-[#8C6A3F]" />
-            <span className="hidden sm:inline">
-              {sortOrder === '-created' ? 'Mais recentes' : 'Mais antigas'}
-            </span>
-          </Button>
+          {/* Filtro por Status */}
+          <div className="sm:col-span-4 md:col-span-4">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="bg-[#FAF8F5] border-[#D6D0C5] text-[#141413]">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-[#8C8A7B]" />
+                  <SelectValue placeholder="Status" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                <SelectItem value="pending">Aguardando Pix</SelectItem>
+                <SelectItem value="under_review">Em Análise</SelectItem>
+                <SelectItem value="approved">Pix Confirmado</SelectItem>
+                <SelectItem value="depix_sent">DePix Enviado</SelectItem>
+                <SelectItem value="expired">Expirada</SelectItem>
+                <SelectItem value="canceled">Cancelada</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Ordenação e Refresh */}
+          <div className="sm:col-span-2 md:col-span-2 flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() =>
+                setSortOrder((prev) => (prev === '-created' ? '+created' : '-created'))
+              }
+              title={sortOrder === '-created' ? 'Mais recentes primeiro' : 'Mais antigas primeiro'}
+              className="border-[#D6D0C5] bg-[#FAF8F5] hover:bg-[#F1EFEA] text-[#141413]"
+            >
+              <ArrowUpDown className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={loadCharges}
+              disabled={loading}
+              title="Atualizar lista"
+              className="border-[#D6D0C5] bg-[#FAF8F5] hover:bg-[#F1EFEA] text-[#141413]"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Conteúdo: Tabela no Desktop / Cards no Mobile */}
-      <div className="bg-white rounded-2xl border border-[#D6D0C5] shadow-xs overflow-hidden">
+      {/* Lista de Cobranças */}
+      <div className="bg-[#FFFFFF] border border-[#D6D0C5] rounded-xl shadow-xs overflow-hidden">
         {loading ? (
-          <div className="py-16 text-center text-[#6B6760] text-sm">
-            <div className="w-8 h-8 rounded-full border-2 border-[#C9A227] border-t-transparent animate-spin mx-auto mb-2" />
-            Carregando cobranças...
+          <div className="p-12 text-center">
+            <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#C5A059] mb-2" />
+            <p className="text-sm text-[#73726C]">Carregando cobranças...</p>
           </div>
         ) : charges.length === 0 ? (
-          <div className="text-center py-16 px-4">
-            <Receipt className="w-12 h-12 text-[#D6D0C5] mx-auto mb-3" />
-            <p className="text-base font-serif font-bold text-[#1A1916]">
-              Nenhuma cobrança encontrada
-            </p>
-            <p className="text-xs text-[#6B6760] mt-1 max-w-sm mx-auto">
-              Ajuste os filtros de busca ou gere uma nova cobrança simulada.
-            </p>
-            <Link to="/cobrancas/nova" className="mt-4 inline-block">
-              <Button className="h-9 px-4 bg-gradient-to-r from-[#C9A227] to-[#A8861F] text-[#0B0B0D] text-xs font-semibold border-0">
-                Criar Cobrança
+          <div className="p-12 text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-[#FAF8F5] border border-[#D6D0C5] flex items-center justify-center mx-auto text-[#8C8A7B]">
+              <Layers className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-serif text-lg font-bold text-[#141413]">
+                Nenhuma cobrança encontrada
+              </h3>
+              <p className="text-sm text-[#73726C] max-w-md mx-auto mt-1">
+                {search || statusFilter !== 'all'
+                  ? 'Nenhum resultado com os filtros selecionados.'
+                  : 'As cobranças geradas para seus clientes serão exibidas aqui.'}
+              </p>
+            </div>
+            {!search && statusFilter === 'all' && (
+              <Button
+                asChild
+                className="bg-[#C5A059] hover:bg-[#B38F46] text-[#141413] font-semibold"
+              >
+                <Link to="/cobrancas/nova">
+                  <Plus className="w-4 h-4 mr-1.5" />
+                  Gerar Cobrança
+                </Link>
               </Button>
-            </Link>
+            )}
           </div>
         ) : (
-          <>
-            {/* Desktop Table (≥ 768px) */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[#F1EFEA] border-b border-[#E6E1D8] text-[#1A1916] font-semibold uppercase tracking-wider">
-                  <tr>
-                    <th className="py-3.5 px-5">Cliente</th>
-                    <th className="py-3.5 px-4">Valor</th>
-                    <th className="py-3.5 px-4">Status</th>
-                    <th className="py-3.5 px-4">Chave Pix</th>
-                    <th className="py-3.5 px-4">Data</th>
-                    <th className="py-3.5 px-5 text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E6E1D8]">
-                  {charges.map((charge) => (
-                    <tr
-                      key={charge.id}
-                      onClick={() => navigate(`/cobrancas/${charge.id}`)}
-                      className="hover:bg-[#FAF8F3] transition-colors cursor-pointer"
-                    >
-                      <td className="py-3.5 px-5 font-semibold text-[#1A1916]">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8C6A3F] to-[#C9A227] text-[#0B0B0D] font-serif font-bold text-xs flex items-center justify-center">
-                            {charge.customer_name ? charge.customer_name[0].toUpperCase() : 'C'}
-                          </div>
-                          <span>{charge.customer_name}</span>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 font-serif text-sm font-bold text-[#1A1916]">
-                        {formatCurrency(charge.amount_cents)}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <StatusBadge status={charge.status} />
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-[#6B6760]">
-                        {maskPixKey(charge.pix_key)}
-                      </td>
-                      <td className="py-3.5 px-4 text-[#6B6760]">{formatDateBr(charge.created)}</td>
-                      <td className="py-3.5 px-5 text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedChargeForShare(charge)
-                            setShareModalOpen(true)
-                          }}
-                          className="h-8 px-2 text-[#8C6A3F] hover:text-[#C9A227] hover:bg-white"
-                        >
-                          <Share2 className="w-4 h-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Cards (< 768px) */}
-            <div className="md:hidden divide-y divide-[#E6E1D8]">
-              {charges.map((charge) => (
+          <div className="divide-y divide-[#E6E4DD]">
+            {charges.map((charge) => {
+              const formattedDate = formatDateBr(charge.created)
+              return (
                 <div
                   key={charge.id}
                   onClick={() => navigate(`/cobrancas/${charge.id}`)}
-                  className="p-4 hover:bg-[#FAF8F3] transition-colors cursor-pointer space-y-3"
+                  className="p-4 sm:p-5 hover:bg-[#FAF8F5] transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#8C6A3F] to-[#C9A227] text-[#0B0B0D] font-serif font-bold text-xs flex items-center justify-center">
-                        {charge.customer_name ? charge.customer_name[0].toUpperCase() : 'C'}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-sm text-[#1A1916]">
-                          {charge.customer_name}
-                        </p>
-                        <p className="text-[11px] text-[#6B6760]">{formatDateBr(charge.created)}</p>
-                      </div>
+                  <div className="space-y-1.5 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-[#141413] truncate max-w-xs sm:max-w-md">
+                        {charge.customer_name || 'Cliente'}
+                      </span>
+                      <StatusBadge status={charge.status as ChargeStatus} />
+                      {charge.is_simulated && (
+                        <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-amber-100 text-amber-800 border border-amber-300">
+                          Homologação
+                        </span>
+                      )}
                     </div>
-                    <StatusBadge status={charge.status} />
+
+                    <div className="flex items-center gap-3 text-xs text-[#73726C] flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-[#8C8A7B]" />
+                        {formattedDate}
+                      </span>
+                      {charge.liquid_address && (
+                        <span className="font-mono text-[11px] text-[#57564F] truncate max-w-[200px]">
+                          Liquid: {charge.liquid_address.slice(0, 10)}...
+                          {charge.liquid_address.slice(-6)}
+                        </span>
+                      )}
+                      {charge.description && (
+                        <span className="text-[#8C8A7B] truncate max-w-[200px]">
+                          • {charge.description}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-1">
-                    <div>
-                      <span className="text-[10px] text-[#8C6A3F] uppercase tracking-wider block">
-                        Chave Pix: {maskPixKey(charge.pix_key)}
-                      </span>
-                      <span className="font-serif text-lg font-bold text-[#1A1916]">
+                  <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
+                    <div className="text-right">
+                      <div className="font-semibold text-base sm:text-lg text-[#141413]">
                         {formatCurrency(charge.amount_cents)}
-                      </span>
+                      </div>
+                      <div className="text-[11px] text-[#73726C]">Recebimento em DePix</div>
                     </div>
 
                     <Button
-                      size="sm"
                       variant="outline"
+                      size="sm"
                       onClick={(e) => {
                         e.stopPropagation()
-                        setSelectedChargeForShare(charge)
-                        setShareModalOpen(true)
+                        setShareCharge(charge)
+                        setIsShareOpen(true)
                       }}
-                      className="h-8 px-3 text-xs border-[#D6D0C5] text-[#8C6A3F] hover:text-[#C9A227]"
+                      className="border-[#D6D0C5] bg-[#FAF8F5] hover:bg-[#F1EFEA] text-xs"
                     >
-                      <Share2 className="w-3.5 h-3.5 mr-1" />
-                      Compartilhar
+                      Detalhes
                     </Button>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            {/* Paginação */}
-            <div className="p-4 border-t border-[#E6E1D8] bg-[#FAF8F3] flex items-center justify-between text-xs text-[#6B6760]">
-              <span>
-                Mostrando {charges.length} de {totalItems} cobranças
-              </span>
-
-              <div className="flex items-center gap-1.5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="h-8 w-8 p-0 border-[#D6D0C5]"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <span className="font-medium text-[#1A1916] px-2">
-                  {page} / {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className="h-8 w-8 p-0 border-[#D6D0C5]"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </>
+              )
+            })}
+          </div>
         )}
       </div>
 
-      {/* Modal de Compartilhamento */}
-      <ShareChargeModal
-        charge={selectedChargeForShare}
-        open={shareModalOpen}
-        onOpenChange={setShareModalOpen}
-      />
+      {shareCharge && (
+        <ShareChargeModal
+          open={isShareOpen}
+          onOpenChange={(open) => {
+            setIsShareOpen(open)
+            if (!open) setShareCharge(null)
+          }}
+          charge={shareCharge}
+        />
+      )}
     </div>
   )
 }

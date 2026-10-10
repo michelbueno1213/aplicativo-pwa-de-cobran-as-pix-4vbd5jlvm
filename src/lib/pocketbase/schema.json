@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-10T12:13:08.293Z",
+  "generatedAt": "2026-10-10T12:33:40.925Z",
   "collections": [
     {
       "name": "users",
@@ -8,7 +8,7 @@
         "list": "id = @request.auth.id",
         "view": "id = @request.auth.id",
         "create": "",
-        "update": "id = @request.auth.id",
+        "update": "id = @request.auth.id && @request.body.role:changed = false && @request.body.is_admin:changed = false",
         "delete": "id = @request.auth.id"
       },
       "fields": [
@@ -43,6 +43,19 @@
           "type": "text",
           "required": false,
           "system": false
+        },
+        {
+          "name": "role",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["merchant", "admin"]
+        },
+        {
+          "name": "is_admin",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -54,11 +67,11 @@
       "name": "charges",
       "type": "base",
       "apiRules": {
-        "list": "user_id = @request.auth.id",
-        "view": "user_id = @request.auth.id",
-        "create": "@request.auth.id != ''",
-        "update": "user_id = @request.auth.id",
-        "delete": "user_id = @request.auth.id"
+        "list": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.is_admin = true)",
+        "view": "@request.auth.id != '' && (user_id = @request.auth.id || @request.auth.is_admin = true)",
+        "create": "@request.auth.id != '' && user_id = @request.auth.id",
+        "update": "@request.auth.id != '' && ((user_id = @request.auth.id && is_simulated = true) || @request.auth.is_admin = true)",
+        "delete": "@request.auth.id != '' && ((user_id = @request.auth.id && is_simulated = true) || @request.auth.is_admin = true)"
       },
       "fields": [
         {
@@ -90,7 +103,22 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["pending", "paid", "expired", "cancelled"]
+          "selectValues": [
+            "pending",
+            "under_review",
+            "approved",
+            "depix_sent",
+            "delayed",
+            "refunded",
+            "canceled",
+            "expired",
+            "error",
+            "unknown",
+            "will_refund",
+            "under_bank_review",
+            "paid",
+            "cancelled"
+          ]
         },
         {
           "name": "payment_link",
@@ -174,12 +202,81 @@
           "type": "number",
           "required": false,
           "system": false
+        },
+        {
+          "name": "is_simulated",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "eulen_deposit_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "bank_tx_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "blockchain_tx_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "qr_image_url",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "payer_euid",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "payer_tax_number",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "payer_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "delay_until",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "depix_sent_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "idempotency_key",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_charges_status ON charges (status)",
         "CREATE INDEX idx_charges_user ON charges (user_id)",
-        "CREATE INDEX idx_charges_created ON charges (created DESC)"
+        "CREATE INDEX idx_charges_created ON charges (created DESC)",
+        "CREATE INDEX `idx_charges_simulated` ON `charges` (is_simulated)",
+        "CREATE INDEX `idx_charges_eulen_id` ON `charges` (eulen_deposit_id)",
+        "CREATE INDEX `idx_charges_idempotency` ON `charges` (user_id, idempotency_key)"
       ]
     },
     {

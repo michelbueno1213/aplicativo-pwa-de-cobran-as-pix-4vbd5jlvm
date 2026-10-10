@@ -7,6 +7,8 @@ export interface UserProfile extends RecordModel {
   email?: string
   avatar?: string
   pix_key?: string
+  role?: 'merchant' | 'admin'
+  is_admin?: boolean
 }
 
 interface AuthContextType {

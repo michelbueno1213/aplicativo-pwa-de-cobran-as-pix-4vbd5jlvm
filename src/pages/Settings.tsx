@@ -378,17 +378,19 @@ export const SettingsPage: React.FC = () => {
 
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF3E0] text-[#B26A00] border border-[#B26A00]/30 text-xs font-semibold">
             <span className="w-2 h-2 rounded-full bg-[#B26A00] animate-pulse" />
-            Modo Simulado Ativo
+            Integração em Homologação
           </span>
         </div>
 
         <div className="p-4 rounded-xl bg-[#FAF8F3] border border-[#E6E1D8] space-y-2">
-          <p className="text-xs text-[#1A1916] leading-relaxed">
-            Cobranças geradas em modo simulado — nada processa pagamento real.
+          <p className="text-xs font-medium text-[#1A1916] leading-relaxed">
+            Em breve: geração de cobranças Pix. Estamos finalizando nossa integração com a provedora
+            de pagamentos.
           </p>
           <p className="text-xs text-[#8C6A3F] leading-relaxed">
-            Quando a integração com a provedora estiver ativa, seus clientes pagarão via Pix e os
-            valores serão recebidos em <strong>DePix na sua carteira Liquid</strong>.
+            Com a integração Eulen Pix2DePix ativada, seus clientes pagam via Pix e os valores são
+            recebidos diretamente em <strong>DePix na sua carteira Liquid</strong>, sem custódia do
+            ROM.
           </p>
         </div>
 
@@ -398,7 +400,7 @@ export const SettingsPage: React.FC = () => {
             onClick={() => setProviderModalOpen(true)}
             className="h-10 px-5 bg-[#FAF8F3] border border-[#C9A227] text-[#1A1916] hover:bg-[#C9A227]/10 text-xs font-semibold rounded-xl"
           >
-            Conectar provedora
+            Status da Provedora
           </Button>
         </div>
       </div>
@@ -583,8 +585,7 @@ export const SettingsPage: React.FC = () => {
               Encerrar Sessão
             </DialogTitle>
             <DialogDescription className="text-xs text-[#6B6760]">
-              Tem certeza de que deseja sair? Suas cobranças simuladas continuarão salvas com
-              segurança.
+              Tem certeza de que deseja sair de sua conta de comerciante ROM?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex gap-2 justify-end mt-4">

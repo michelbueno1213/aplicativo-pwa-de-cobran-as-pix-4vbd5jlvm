@@ -1,40 +1,49 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
-import { chargesService, type ChargeRecord } from '@/services/charges'
-import { formatCurrency, formatDateBr } from '@/lib/formatters'
-import { StatusBadge } from '@/components/StatusBadge'
-import { ShareChargeModal } from '@/components/ShareChargeModal'
-import useRealtime from '@/hooks/use-realtime'
 import {
-  Radio,
-  ArrowRight,
   TrendingUp,
   Clock,
-  CheckCircle,
-  AlertCircle,
+  ArrowUpRight,
   Plus,
-  Share2,
-  Calendar,
+  RefreshCw,
+  Wallet,
+  ShieldCheck,
+  CheckCircle2,
+  Info,
+  Layers,
   Sparkles,
+  Link as LinkIcon,
 } from 'lucide-react'
+import { chargesService, ChargeRecord } from '@/services/charges'
+import { StatusBadge, ChargeStatus } from '@/components/StatusBadge'
+import { formatCurrency, formatDateBr } from '@/lib/formatters'
+import { useAuth } from '@/contexts/AuthContext'
+import { useRealtime } from '@/hooks/use-realtime'
 import { Button } from '@/components/ui/button'
+import { ShareChargeModal } from '@/components/ShareChargeModal'
 
 export const Dashboard: React.FC = () => {
-  const { user } = useAuth()
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const [charges, setCharges] = useState<ChargeRecord[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedChargeForShare, setSelectedChargeForShare] = useState<ChargeRecord | null>(null)
-  const [shareModalOpen, setShareModalOpen] = useState(false)
+  const [shareCharge, setShareCharge] = useState<ChargeRecord | null>(null)
+  const [isShareOpen, setIsShareOpen] = useState(false)
 
   const loadData = async () => {
+    setLoading(true)
     try {
-      const records = await chargesService.getAllForKpis()
-      setCharges(records)
+      // Carregar apenas registros de produção não simulados
+      const res = await chargesService.list({
+        page: 1,
+        perPage: 10,
+        sort: '-created',
+        includeSimulated: false,
+      })
+      setCharges(res.items)
     } catch {
-      // Ignora erro inicial
+      setCharges([])
     } finally {
       setLoading(false)
     }
@@ -44,303 +53,219 @@ export const Dashboard: React.FC = () => {
     loadData()
   }, [])
 
-  useRealtime('charges', () => {
+  useRealtime<ChargeRecord>('charges', () => {
     loadData()
   })
 
-  // KPIs calculados
-  const paidCharges = charges.filter((c) => c.status === 'paid')
-  const pendingCharges = charges.filter((c) => c.status === 'pending')
+  // Cálculos estritamente de valores liquidados em carteiras externas (ROM não custodia fundos)
+  const paidCharges = charges.filter(
+    (c) => c.status === 'depix_sent' || c.status === 'approved' || c.status === 'paid',
+  )
+  const pendingCharges = charges.filter(
+    (c) => c.status === 'pending' || c.status === 'under_review',
+  )
 
-  const totalCollectedCents = paidCharges.reduce((sum, c) => sum + (c.amount_cents || 0), 0)
-  const pendingCount = pendingCharges.length
-  const totalCount = charges.length
-  const conversionRate = totalCount > 0 ? Math.round((paidCharges.length / totalCount) * 100) : 0
-  const expectedPendingCents = pendingCharges.reduce((sum, c) => sum + (c.amount_cents || 0), 0)
-
-  // Gráfico de últimos 7 dias
-  const last7Days = Array.from({ length: 7 }).map((_, i) => {
-    const d = new Date()
-    d.setDate(d.getDate() - (6 - i))
-    const dateKey = d.toISOString().split('T')[0]
-    const dayLabel = new Intl.DateTimeFormat('pt-BR', { weekday: 'short' })
-      .format(d)
-      .toUpperCase()
-      .replace('.', '')
-
-    const dayCharges = charges.filter((c) => (c.created || '').startsWith(dateKey))
-    const paidDayCents = dayCharges
-      .filter((c) => c.status === 'paid')
-      .reduce((sum, c) => sum + (c.amount_cents || 0), 0)
-    const pendingDayCents = dayCharges
-      .filter((c) => c.status === 'pending')
-      .reduce((sum, c) => sum + (c.amount_cents || 0), 0)
-
-    return {
-      dateKey,
-      dayLabel,
-      paidCents: paidDayCents,
-      pendingCents: pendingDayCents,
-      totalCents: paidDayCents + pendingDayCents,
-    }
-  })
-
-  const maxChartValue = Math.max(...last7Days.map((d) => d.totalCents), 10000)
-
-  // 5 últimas cobranças
-  const recentCharges = charges.slice(0, 5)
-
-  // Data formatada de hoje: "Domingo, 12 de janeiro"
-  const formattedToday = new Intl.DateTimeFormat('pt-BR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  }).format(new Date())
-  const capitalizedToday = formattedToday.charAt(0).toUpperCase() + formattedToday.slice(1)
+  const totalSettledCents = paidCharges.reduce(
+    (acc, curr) => acc + (curr.net_depix_amount_cents || curr.amount_cents),
+    0,
+  )
+  const pendingVolumeCents = pendingCharges.reduce((acc, curr) => acc + curr.amount_cents, 0)
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fade-in">
-      {/* Topo: Saudação e Data */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#D6D0C5]/60">
+    <div className="space-y-6 pb-12">
+      {/* Mensagem Oficial de Integração Pendente */}
+      <div className="rounded-xl border border-amber-500/30 bg-[#FFFDF5] p-4 text-[#7A4B00] shadow-xs">
+        <div className="flex items-start gap-3">
+          <Info className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+          <div className="text-sm">
+            <p className="font-semibold text-[#663C00]">
+              Em breve: geração de cobranças Pix. Estamos finalizando nossa integração com a
+              provedora de pagamentos.
+            </p>
+            <p className="text-xs text-[#8F5900] mt-1">
+              Plataforma não custodial: cada comerciante recebe DePix diretamente em sua carteira
+              Liquid.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Boas-vindas e Ação Principal */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1916]">
-            Bem-vindo(a), {user?.name ? user.name.split(' ')[0] : 'Parceiro'}
+          <h1 className="font-serif text-2xl md:text-3xl font-bold text-[#141413]">
+            Painel do Comerciante
           </h1>
-          <p className="text-xs sm:text-sm text-[#6B6760] font-sans mt-0.5 flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-[#8C6A3F]" />
-            {capitalizedToday}
+          <p className="text-sm text-[#73726C] mt-1">
+            Olá,{' '}
+            <strong className="text-[#141413]">{user?.name || user?.email || 'Comerciante'}</strong>
+            . Acompanhe suas cobranças e liquidações Liquid.
           </p>
         </div>
 
-        <Link to="/cobrancas/nova">
-          <Button className="h-11 px-5 bg-gradient-to-r from-[#C9A227] to-[#A8861F] hover:from-[#F5D77F] hover:to-[#C9A227] text-[#0B0B0D] font-semibold text-xs tracking-wider uppercase rounded-xl shadow-md transition-all transform hover:-translate-y-0.5 border-0 flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Nova Cobrança
+        <div className="flex items-center gap-2">
+          <Button
+            asChild
+            className="bg-[#C5A059] hover:bg-[#B38F46] text-[#141413] font-semibold shadow-xs"
+          >
+            <Link to="/cobrancas/nova">
+              <Plus className="w-4 h-4 mr-1.5" />
+              Nova Cobrança
+            </Link>
           </Button>
-        </Link>
+        </div>
       </div>
 
-      {/* Banner de Modo Simulado */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1C1A17] via-[#121110] to-[#181614] border border-[#C9A227]/30 p-5 sm:p-6 text-[#F6F4EF] shadow-lg">
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5 max-w-2xl">
-            <div className="w-10 h-10 rounded-xl bg-[#B26A00]/20 border border-[#B26A00]/40 text-[#F5D77F] flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Radio className="w-5 h-5 text-[#C9A227] animate-pulse" />
+      {/* Cards de Métricas: Valores Liquidados e Operações (Nunca Saldo Custodiado) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Card 1: Valores Liquidados na Carteira */}
+        <div className="bg-[#FFFFFF] border border-[#D6D0C5] rounded-xl p-5 shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-[#73726C] uppercase tracking-wider">
+              Valores Liquidados
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-serif text-base sm:text-lg font-bold text-[#F6F4EF]">
-                  Você está no modo simulado
-                </span>
-                <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#B26A00]/30 text-[#F5D77F] border border-[#B26A00]/40 font-semibold">
-                  Ativo
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-[#D6D0C5] mt-1 leading-relaxed">
-                Cobranças geradas em modo simulado — nada processa pagamento real. Quando a
-                integração com a provedora estiver ativa, os valores serão recebidos em DePix na sua
-                carteira Liquid.
-              </p>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-[#141413]">
+              {formatCurrency(totalSettledCents)}
             </div>
+            <p className="text-xs text-[#73726C] mt-1">
+              Entregues em DePix nas carteiras Liquid cadastradas.
+            </p>
+          </div>
+          <div className="pt-2 border-t border-[#E6E4DD] flex items-center gap-1.5 text-[11px] text-[#2E7D32]">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Modelo não custodial — fundos externos</span>
+          </div>
+        </div>
+
+        {/* Card 2: Em Processamento / Aguardando Pix */}
+        <div className="bg-[#FFFFFF] border border-[#D6D0C5] rounded-xl p-5 shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-[#73726C] uppercase tracking-wider">
+              Aguardando Pix
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
+              <Clock className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-[#141413]">
+              {formatCurrency(pendingVolumeCents)}
+            </div>
+            <p className="text-xs text-[#73726C] mt-1">
+              {pendingCharges.length} cobrança(s) pendente(s) de pagamento
+            </p>
+          </div>
+          <div className="pt-2 border-t border-[#E6E4DD] flex items-center gap-1.5 text-[11px] text-[#B26A00]">
+            <Layers className="w-3.5 h-3.5" />
+            <span>Conversão 1 BRL = 1 DePix</span>
+          </div>
+        </div>
+
+        {/* Card 3: Carteiras e Acesso Rápido */}
+        <div className="bg-[#FFFFFF] border border-[#D6D0C5] rounded-xl p-5 shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-[#73726C] uppercase tracking-wider">
+              Minha Carteira Liquid
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] text-[#C5A059] flex items-center justify-center">
+              <Wallet className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-[#141413]">Recebimento Direto</div>
+            <p className="text-xs text-[#73726C] mt-1">
+              Gerencie seus endereços para recebimento automático dos DePix.
+            </p>
+          </div>
+          <div className="pt-2 border-t border-[#E6E4DD]">
+            <Link
+              to="/configuracoes?tab=carteiras"
+              className="text-xs font-semibold text-[#C5A059] hover:underline flex items-center gap-1"
+            >
+              Configurar Carteiras Liquid
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Seção de Cobranças Recentes */}
+      <div className="bg-[#FFFFFF] border border-[#D6D0C5] rounded-xl shadow-xs overflow-hidden">
+        <div className="p-5 border-b border-[#E6E4DD] flex items-center justify-between">
+          <div>
+            <h3 className="font-serif text-lg font-bold text-[#141413]">Cobranças Recentes</h3>
+            <p className="text-xs text-[#73726C]">
+              Operações em produção geradas para seus clientes
+            </p>
           </div>
 
           <Button
-            onClick={() => navigate('/configuracoes')}
-            className="h-10 px-4 bg-[#C9A227]/15 hover:bg-[#C9A227]/25 text-[#F5D77F] border border-[#C9A227]/40 text-xs font-semibold rounded-xl flex-shrink-0 transition-colors"
+            asChild
+            variant="ghost"
+            size="sm"
+            className="text-xs text-[#57564F] hover:text-[#141413]"
           >
-            Conectar provedora
+            <Link to="/cobrancas">
+              Ver todas
+              <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
+            </Link>
           </Button>
         </div>
-      </div>
 
-      {/* Grade de KPIs (2x2 Mobile / 4 colunas Desktop) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-        {/* KPI 1: Total recebido em DePix */}
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#D6D0C5] shadow-xs hover:shadow-md transition-all group">
-          <div className="flex items-center justify-between text-xs text-[#6B6760] mb-2 font-medium">
-            <span>Total recebido (DePix simulado)</span>
-            <CheckCircle className="w-4 h-4 text-[#2E7D32]" />
+        {loading ? (
+          <div className="p-8 text-center">
+            <RefreshCw className="w-5 h-5 animate-spin mx-auto text-[#C5A059] mb-2" />
+            <p className="text-xs text-[#73726C]">Carregando...</p>
           </div>
-          <div className="font-serif text-xl sm:text-3xl font-extrabold text-[#1A1916] tracking-tight">
-            {formatCurrency(totalCollectedCents)}
-          </div>
-          <p className="text-[11px] text-[#2E7D32] mt-1 font-medium flex items-center gap-1">
-            <span>●</span> {paidCharges.length} cobranças liquidadas
-          </p>
-        </div>
-
-        {/* KPI 2: Cobranças pendentes */}
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#D6D0C5] shadow-xs hover:shadow-md transition-all group">
-          <div className="flex items-center justify-between text-xs text-[#6B6760] mb-2 font-medium">
-            <span>Cobranças Pix pendentes</span>
-            <Clock className="w-4 h-4 text-[#B26A00]" />
-          </div>
-          <div className="font-serif text-xl sm:text-3xl font-extrabold text-[#1A1916] tracking-tight">
-            {pendingCount}
-          </div>
-          <p className="text-[11px] text-[#B26A00] mt-1 font-medium flex items-center gap-1">
-            <span>●</span> aguardando pagamento Pix
-          </p>
-        </div>
-
-        {/* KPI 3: Taxa de conversão */}
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#D6D0C5] shadow-xs hover:shadow-md transition-all group">
-          <div className="flex items-center justify-between text-xs text-[#6B6760] mb-2 font-medium">
-            <span>Taxa de conversão</span>
-            <TrendingUp className="w-4 h-4 text-[#C9A227]" />
-          </div>
-          <div className="font-serif text-xl sm:text-3xl font-extrabold text-[#1A1916] tracking-tight">
-            {conversionRate}%
-          </div>
-          <p className="text-[11px] text-[#6B6760] mt-1 font-medium">
-            {paidCharges.length} de {totalCount} concluídas
-          </p>
-        </div>
-
-        {/* KPI 4: A receber em DePix (pendentes) */}
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#D6D0C5] shadow-xs hover:shadow-md transition-all group">
-          <div className="flex items-center justify-between text-xs text-[#6B6760] mb-2 font-medium">
-            <span>A receber (DePix)</span>
-            <AlertCircle className="w-4 h-4 text-[#8C6A3F]" />
-          </div>
-          <div className="font-serif text-xl sm:text-3xl font-extrabold text-[#1A1916] tracking-tight">
-            {formatCurrency(expectedPendingCents)}
-          </div>
-          <p className="text-[11px] text-[#8C6A3F] mt-1 font-medium">
-            soma das cobranças pendentes
-          </p>
-        </div>
-      </div>
-
-      {/* Gráfico de Barras dos Últimos 7 Dias */}
-      <div className="bg-white p-5 sm:p-6 rounded-2xl border border-[#D6D0C5] shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
-          <div>
-            <h2 className="font-serif text-lg font-bold text-[#1A1916]">
-              Volume dos Últimos 7 Dias
-            </h2>
-            <p className="text-xs text-[#6B6760]">
-              Distribuição diária entre cobranças pagas e pendentes
-            </p>
-          </div>
-          <div className="flex items-center gap-4 text-xs">
-            <span className="flex items-center gap-1.5 text-[#2E7D32] font-medium">
-              <span className="w-3 h-3 rounded-xs bg-[#2E7D32]" />
-              Pagas
-            </span>
-            <span className="flex items-center gap-1.5 text-[#B26A00] font-medium">
-              <span className="w-3 h-3 rounded-xs bg-[#C9A227]" />
-              Pendentes
-            </span>
-          </div>
-        </div>
-
-        {/* Barras */}
-        <div className="grid grid-cols-7 gap-2 sm:gap-4 h-48 items-end pt-6 border-b border-[#E6E1D8]">
-          {last7Days.map((item, index) => {
-            const paidHeight = maxChartValue > 0 ? (item.paidCents / maxChartValue) * 100 : 0
-            const pendingHeight = maxChartValue > 0 ? (item.pendingCents / maxChartValue) * 100 : 0
-
-            return (
-              <div
-                key={item.dateKey}
-                className="flex flex-col items-center h-full justify-end group relative"
-              >
-                {/* Tooltip ao passar o mouse */}
-                <div className="absolute -top-12 z-20 hidden group-hover:flex flex-col items-center bg-[#0B0B0D] text-white text-[10px] p-2 rounded-lg shadow-lg pointer-events-none whitespace-nowrap">
-                  <span>Pagas: {formatCurrency(item.paidCents)}</span>
-                  <span>Pendentes: {formatCurrency(item.pendingCents)}</span>
-                  <div className="w-2 h-2 bg-[#0B0B0D] rotate-45 -mb-1 mt-0.5" />
-                </div>
-
-                <div className="w-full max-w-[36px] flex flex-col justify-end gap-1 h-full pb-1">
-                  {/* Barra Pagas */}
-                  <div
-                    style={{ height: `${Math.max(paidHeight, 4)}%` }}
-                    className="w-full bg-[#2E7D32] rounded-t-sm transition-all duration-500 hover:brightness-110"
-                  />
-                  {/* Barra Pendentes */}
-                  <div
-                    style={{ height: `${Math.max(pendingHeight, 4)}%` }}
-                    className="w-full bg-[#C9A227] rounded-t-sm transition-all duration-500 hover:brightness-110"
-                  />
-                </div>
-                <span className="text-[10px] sm:text-xs text-[#6B6760] font-medium mt-2">
-                  {item.dayLabel}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Lista das 5 Últimas Cobranças */}
-      <div className="bg-white rounded-2xl border border-[#D6D0C5] p-5 sm:p-6 shadow-xs">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="font-serif text-lg font-bold text-[#1A1916]">Últimas Cobranças</h2>
-            <p className="text-xs text-[#6B6760]">
-              Movimentações mais recentes geradas na sua conta
-            </p>
-          </div>
-          <Link
-            to="/cobrancas"
-            className="text-xs font-semibold text-[#8C6A3F] hover:text-[#C9A227] flex items-center gap-1 transition-colors"
-          >
-            Ver todas
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        {recentCharges.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-[#D6D0C5] rounded-xl bg-[#FAF8F3]">
-            <p className="text-sm text-[#6B6760]">Nenhuma cobrança gerada ainda.</p>
-            <Link to="/cobrancas/nova" className="mt-3 inline-block">
-              <Button className="h-9 px-4 bg-gradient-to-r from-[#C9A227] to-[#A8861F] text-[#0B0B0D] text-xs font-semibold border-0">
-                Criar primeira cobrança
-              </Button>
-            </Link>
+        ) : charges.length === 0 ? (
+          <div className="p-8 text-center space-y-3">
+            <p className="text-sm text-[#73726C]">Nenhuma cobrança gerada ainda.</p>
+            <Button
+              asChild
+              size="sm"
+              className="bg-[#C5A059] hover:bg-[#B38F46] text-[#141413] text-xs font-semibold"
+            >
+              <Link to="/cobrancas/nova">
+                <Plus className="w-3.5 h-3.5 mr-1" />
+                Criar Primeira Cobrança
+              </Link>
+            </Button>
           </div>
         ) : (
-          <div className="divide-y divide-[#E6E1D8]">
-            {recentCharges.map((charge) => (
+          <div className="divide-y divide-[#E6E4DD]">
+            {charges.slice(0, 5).map((charge) => (
               <div
                 key={charge.id}
-                className="py-3.5 flex items-center justify-between gap-3 hover:bg-[#FAF8F3] -mx-2 px-2 rounded-lg transition-colors cursor-pointer"
                 onClick={() => navigate(`/cobrancas/${charge.id}`)}
+                className="p-4 hover:bg-[#FAF8F5] transition-colors cursor-pointer flex items-center justify-between gap-4"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#8C6A3F] to-[#C9A227] text-[#0B0B0D] font-serif font-bold text-xs flex items-center justify-center flex-shrink-0">
-                    {charge.customer_name ? charge.customer_name[0].toUpperCase() : 'C'}
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm text-[#141413] truncate">
+                      {charge.customer_name || 'Cliente'}
+                    </span>
+                    <StatusBadge status={charge.status as ChargeStatus} />
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[#1A1916] truncate">
-                      {charge.customer_name}
-                    </p>
-                    <p className="text-[11px] text-[#6B6760]">{formatDateBr(charge.created)}</p>
+                  <div className="flex items-center gap-2 text-xs text-[#73726C]">
+                    <span>{formatDateBr(charge.created)}</span>
+                    {charge.liquid_address && (
+                      <span className="font-mono text-[11px] text-[#57564F] truncate max-w-[150px]">
+                        • Liquid: {charge.liquid_address.slice(0, 8)}...
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <div className="text-right">
-                    <p className="font-serif text-sm sm:text-base font-bold text-[#1A1916]">
-                      {formatCurrency(charge.amount_cents)}
-                    </p>
-                    <StatusBadge status={charge.status} />
+                <div className="text-right shrink-0">
+                  <div className="font-semibold text-sm text-[#141413]">
+                    {formatCurrency(charge.amount_cents)}
                   </div>
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setSelectedChargeForShare(charge)
-                      setShareModalOpen(true)
-                    }}
-                    className="p-2 text-[#8C6A3F] hover:text-[#C9A227] hover:bg-white rounded-lg transition-colors"
-                    title="Compartilhar"
-                    aria-label="Compartilhar cobrança"
-                  >
-                    <Share2 className="w-4 h-4" />
-                  </button>
+                  <div className="text-[11px] text-[#73726C]">Recebe em DePix</div>
                 </div>
               </div>
             ))}
@@ -348,12 +273,16 @@ export const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Modal de Compartilhamento */}
-      <ShareChargeModal
-        charge={selectedChargeForShare}
-        open={shareModalOpen}
-        onOpenChange={setShareModalOpen}
-      />
+      {shareCharge && (
+        <ShareChargeModal
+          open={isShareOpen}
+          onOpenChange={(open) => {
+            setIsShareOpen(open)
+            if (!open) setShareCharge(null)
+          }}
+          charge={shareCharge}
+        />
+      )}
     </div>
   )
 }
