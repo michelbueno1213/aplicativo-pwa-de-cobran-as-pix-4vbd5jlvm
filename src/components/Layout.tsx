@@ -13,6 +13,7 @@ import {
   Wallet,
   Coins,
   ShieldAlert,
+  ArrowRightLeft,
   Link as LinkIcon,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -28,66 +29,33 @@ export const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) =
 
   const handleLogout = () => {
     logout()
-    navigate('/login')
+    navigate('/entrar')
   }
 
-  const navItems = [
-    {
-      title: 'Início',
-      path: '/dashboard',
-      icon: LayoutDashboard,
-    },
-    {
-      title: 'Nova Cobrança',
-      path: '/cobrancas/nova',
-      icon: PlusCircle,
-    },
-    {
-      title: 'Meus Links',
-      path: '/cobrancas',
-      icon: LinkIcon,
-    },
-    {
-      title: 'Histórico & Cobranças',
-      path: '/cobrancas',
-      icon: Receipt,
-    },
-    {
-      title: 'Carteiras Liquid',
-      path: '/configuracoes?tab=carteiras',
-      icon: Wallet,
-    },
-    {
-      title: 'Valores Liquidados',
-      path: '/dashboard',
-      icon: Coins,
-    },
-    {
-      title: 'Clientes',
-      path: '/clientes',
-      icon: Users,
-    },
-    {
-      title: 'Configurações',
-      path: '/configuracoes',
-      icon: Settings,
-    },
-    {
-      title: 'Suporte',
-      path: '/suporte',
-      icon: HelpCircle,
-    },
-  ]
+  const isAdmin = Boolean(user?.is_admin || user?.role === 'admin')
 
-  // Remover itens duplicados na exibição para clareza
+  // Ordem exata dos itens exigida pela especificação:
+  // Início, Nova Cobrança, Meus Links, Saques, Histórico, Carteiras Liquid, Valores Liquidados, Configurações, Suporte
+  // mais "Homologação" visível SOMENTE para administradores (não-admins nunca veem o item)
   const displayItems = [
-    { title: 'Início', path: '/dashboard', icon: LayoutDashboard },
+    { title: 'Início', path: '/inicio', icon: LayoutDashboard },
     { title: 'Nova Cobrança', path: '/cobrancas/nova', icon: PlusCircle },
-    { title: 'Meus Links', path: '/cobrancas', icon: LinkIcon },
-    { title: 'Carteiras Liquid', path: '/configuracoes?tab=carteiras', icon: Wallet },
-    { title: 'Clientes', path: '/clientes', icon: Users },
+    { title: 'Meus Links', path: '/links', icon: LinkIcon },
+    { title: 'Saques', path: '/saques', icon: ArrowRightLeft },
+    { title: 'Histórico', path: '/cobrancas', icon: Receipt },
+    { title: 'Carteiras Liquid', path: '/carteiras', icon: Wallet },
+    { title: 'Valores Liquidados', path: '/valores-liquidados', icon: Coins },
     { title: 'Configurações', path: '/configuracoes', icon: Settings },
     { title: 'Suporte', path: '/suporte', icon: HelpCircle },
+    ...(isAdmin
+      ? [
+          {
+            title: 'Homologação',
+            path: '/homologacao',
+            icon: ShieldAlert,
+          },
+        ]
+      : []),
   ]
 
   const isActive = (path: string) => {
@@ -217,8 +185,16 @@ export const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) =
         </div>
       )}
 
-      {/* Conteúdo Principal */}
-      <main className="flex-1 p-4 md:p-8 max-w-6xl w-full mx-auto">{children || <Outlet />}</main>
+      {/* Conteúdo Principal com Rodapé Institucional */}
+      <div className="flex-1 flex flex-col justify-between">
+        <main className="p-4 md:p-8 max-w-6xl w-full mx-auto flex-1">{children || <Outlet />}</main>
+
+        {/* Nota Institucional no rodapé do painel */}
+        <footer className="px-4 py-4 md:px-8 border-t border-[#D6D0C5]/40 text-center text-xs text-[#8C8A7B]">
+          Emissão real de cobranças habilitada somente após aprovação da provedora e implantação das
+          credenciais.
+        </footer>
+      </div>
     </div>
   )
 }

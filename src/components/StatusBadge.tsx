@@ -41,104 +41,175 @@ interface StatusBadgeProps {
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className = '' }) => {
   switch (status) {
     case 'depix_sent':
+      // DePix Enviado (esmeralda escuro)
       return (
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#E8F5E9] text-[#1B5E20] border border-[#2E7D32]/30 shadow-xs ${className}`}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#064E3B]/10 text-[#064E3B] border border-[#064E3B]/30 shadow-xs ${className}`}
           title="DePix transferido com sucesso na rede Liquid"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#2E7D32]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#064E3B]" />
           DePix Enviado
         </span>
       )
 
     case 'approved':
     case 'paid':
+      // Pix Confirmado (verde)
       return (
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#E8F5E9] text-[#2E7D32] border border-[#2E7D32]/20 shadow-xs ${className}`}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#16A34A]/10 text-[#15803D] border border-[#16A34A]/25 shadow-xs ${className}`}
           title="Pix confirmado pela provedora — envio de DePix em andamento"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#2E7D32]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
           Pix Confirmado
         </span>
       )
 
     case 'under_review':
     case 'under_bank_review':
+      // Em Análise (âmbar)
       return (
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#FFF8E1] text-[#F57F17] border border-[#F57F17]/30 shadow-xs ${className}`}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#D97706]/10 text-[#B45309] border border-[#D97706]/30 shadow-xs ${className}`}
           title="Pix recebido, em análise pela conformidade"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#F57F17] animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#D97706] animate-pulse" />
           Em Análise
         </span>
       )
 
     case 'delayed':
+      // Atrasada (laranja)
       return (
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#FFF3E0] text-[#E65100] border border-[#E65100]/30 shadow-xs ${className}`}
-          title="Pagamento temporariamente retido"
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#EA580C]/10 text-[#C2410C] border border-[#EA580C]/30 shadow-xs ${className}`}
+          title="Pagamento temporariamente retido / atrasado"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#E65100]" />
-          Retido
+          <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C]" />
+          Atrasada
         </span>
       )
 
     case 'pending':
+      // Aguardando Pagamento (cinza)
       return (
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#FFF3E0] text-[#B26A00] border border-[#B26A00]/25 shadow-xs ${className}`}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#64748B]/10 text-[#475569] border border-[#64748B]/25 shadow-xs ${className}`}
           title="Aguardando pagamento Pix"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#B26A00] animate-pulse" />
-          Aguardando Pix
+          <span className="w-1.5 h-1.5 rounded-full bg-[#64748B] animate-pulse" />
+          Aguardando Pagamento
         </span>
       )
 
     case 'refunded':
     case 'will_refund':
+      // Estornada (vermelho)
       return (
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#ECEFF1] text-[#455A64] border border-[#B0BEC5] ${className}`}
-          title="Valor reembolsado ao pagador"
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#DC2626]/10 text-[#B91C1C] border border-[#DC2626]/25 shadow-xs ${className}`}
+          title="Valor estornado ao pagador"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#78909C]" />
-          Reembolsado
+          <span className="w-1.5 h-1.5 rounded-full bg-[#DC2626]" />
+          Estornada
         </span>
       )
 
     case 'expired':
+      // Expirada (cinza)
       return (
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#F1EFEA] text-[#6B6760] border border-[#D6D0C5] ${className}`}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#64748B]/10 text-[#475569] border border-[#64748B]/20 shadow-xs ${className}`}
           title="Cobrança expirada"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#6B6760]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#64748B]" />
           Expirada
         </span>
       )
 
     case 'canceled':
     case 'cancelled':
+      // Cancelada (cinza escuro)
       return (
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#FDECEA] text-[#B3261E] border border-[#B3261E]/20 ${className}`}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#334155]/10 text-[#1E293B] border border-[#334155]/30 shadow-xs ${className}`}
           title="Cobrança cancelada"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#B3261E]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#334155]" />
           Cancelada
         </span>
       )
 
     case 'error':
+      // Erro (vermelho escuro)
       return (
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#FDECEA] text-[#B3261E] border border-[#B3261E]/30 ${className}`}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#7F1D1D]/15 text-[#7F1D1D] border border-[#7F1D1D]/35 shadow-xs ${className}`}
           title="Erro no processamento"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#B3261E]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#7F1D1D]" />
+          Erro
+        </span>
+      )
+
+    // Badges de Saque:
+    // Aguardando Envio (cinza), Enviando (azul), Pix Enviado (verde), Em Revisão (âmbar), Estornado (vermelho), Erro (vermelho escuro)
+    case 'saque_aguardando_envio':
+      return (
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#64748B]/10 text-[#475569] border border-[#64748B]/25 ${className}`}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-[#64748B]" />
+          Aguardando Envio
+        </span>
+      )
+
+    case 'saque_enviando':
+      return (
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#2563EB]/10 text-[#1D4ED8] border border-[#2563EB]/25 ${className}`}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB] animate-pulse" />
+          Enviando
+        </span>
+      )
+
+    case 'saque_pix_enviado':
+      return (
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#16A34A]/10 text-[#15803D] border border-[#16A34A]/25 ${className}`}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+          Pix Enviado
+        </span>
+      )
+
+    case 'saque_em_revisao':
+      return (
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#D97706]/10 text-[#B45309] border border-[#D97706]/30 ${className}`}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-[#D97706] animate-pulse" />
+          Em Revisão
+        </span>
+      )
+
+    case 'saque_estornado':
+      return (
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#DC2626]/10 text-[#B91C1C] border border-[#DC2626]/25 ${className}`}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-[#DC2626]" />
+          Estornado
+        </span>
+      )
+
+    case 'saque_erro':
+      return (
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[6px] text-xs font-semibold bg-[#7F1D1D]/15 text-[#7F1D1D] border border-[#7F1D1D]/35 ${className}`}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-[#7F1D1D]" />
           Erro
         </span>
       )

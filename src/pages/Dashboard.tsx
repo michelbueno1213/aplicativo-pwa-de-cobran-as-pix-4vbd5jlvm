@@ -130,15 +130,28 @@ export const Dashboard: React.FC = () => {
           </div>
           <div>
             <div className="text-2xl font-bold text-[#141413]">
-              {formatCurrency(totalSettledCents)}
+              {charges.some((c) => c.status === 'depix_sent')
+                ? formatCurrency(totalSettledCents)
+                : 'R$ 0,00'}
             </div>
             <p className="text-xs text-[#73726C] mt-1">
-              Entregues em DePix nas carteiras Liquid cadastradas.
+              {charges.some((c) => c.status === 'depix_sent')
+                ? 'Entregues em DePix nas carteiras Liquid cadastradas.'
+                : 'Os valores aparecem aqui após a liquidação real das cobranças.'}
             </p>
           </div>
-          <div className="pt-2 border-t border-[#E6E4DD] flex items-center gap-1.5 text-[11px] text-[#2E7D32]">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Modelo não custodial — fundos externos</span>
+          <div className="pt-2 border-t border-[#E6E4DD] flex items-center justify-between text-[11px]">
+            <div className="flex items-center gap-1.5 text-[#2E7D32]">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Valores creditados diretamente na sua carteira Liquid</span>
+            </div>
+            <Link
+              to="/valores-liquidados"
+              className="text-[#C5A059] font-medium hover:underline flex items-center gap-0.5"
+            >
+              Ver detalhes
+              <ArrowUpRight className="w-3 h-3" />
+            </Link>
           </div>
         </div>
 
@@ -179,15 +192,15 @@ export const Dashboard: React.FC = () => {
           <div>
             <div className="text-sm font-semibold text-[#141413]">Recebimento Direto</div>
             <p className="text-xs text-[#73726C] mt-1">
-              Gerencie seus endereços para recebimento automático dos DePix.
+              Gerencie seus endereços para recebimento automático dos tokens DePix.
             </p>
           </div>
           <div className="pt-2 border-t border-[#E6E4DD]">
             <Link
-              to="/configuracoes?tab=carteiras"
+              to="/carteiras"
               className="text-xs font-semibold text-[#C5A059] hover:underline flex items-center gap-1"
             >
-              Configurar Carteiras Liquid
+              Gerenciar Carteiras Liquid
               <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           </div>

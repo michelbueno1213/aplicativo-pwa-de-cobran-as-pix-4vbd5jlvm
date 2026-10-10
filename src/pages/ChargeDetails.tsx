@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft,
   Copy,
@@ -181,6 +181,19 @@ export const ChargeDetails: React.FC = () => {
               Sincronizar
             </Button>
           )}
+
+          {/* Botão Ver página pública */}
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="border-[#D6D0C5] text-xs text-[#141413] hover:bg-[#FAF8F5]"
+          >
+            <Link to={`/pagar/${charge.id}`} target="_blank" rel="noreferrer">
+              <ExternalLink className="w-3.5 h-3.5 mr-1.5 text-[#C5A059]" />
+              Ver página pública
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -211,25 +224,39 @@ export const ChargeDetails: React.FC = () => {
             processados automaticamente via webhook e conciliação bancária — alterações manuais são
             estritamente bloqueadas.
           </p>
-          {charge.status === 'pending' && (
-            <div className="flex items-center gap-2 pt-1">
-              <Button
-                size="sm"
-                onClick={handleSimulatePayment}
-                className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs"
-              >
-                Simular Pagamento Pix e Envio DePix
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSimulateCancel}
-                className="border-red-300 text-red-700 hover:bg-red-50 text-xs"
-              >
-                Simular Cancelamento
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2 pt-1 flex-wrap">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="border-amber-400 bg-white hover:bg-amber-100/50 text-amber-950 text-xs"
+            >
+              <Link to={`/pagar/${charge.id}`} target="_blank" rel="noreferrer">
+                <ExternalLink className="w-3.5 h-3.5 mr-1 text-[#C5A059]" />
+                Ver página pública
+              </Link>
+            </Button>
+
+            {charge.status === 'pending' && (
+              <>
+                <Button
+                  size="sm"
+                  onClick={handleSimulatePayment}
+                  className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs"
+                >
+                  Simular Pagamento Pix e Envio DePix
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSimulateCancel}
+                  className="border-red-300 text-red-700 hover:bg-red-50 text-xs"
+                >
+                  Simular Cancelamento
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       )}
 

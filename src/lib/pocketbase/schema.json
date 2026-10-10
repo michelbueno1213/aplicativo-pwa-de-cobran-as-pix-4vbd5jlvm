@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-10T12:33:40.925Z",
+  "generatedAt": "2026-10-10T15:49:21.587Z",
   "collections": [
     {
       "name": "users",
@@ -396,6 +396,82 @@
       "indexes": [
         "CREATE INDEX idx_wallets_user ON liquid_wallets (user_id)",
         "CREATE INDEX idx_wallets_created ON liquid_wallets (created DESC)"
+      ]
+    },
+    {
+      "name": "payment_links",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && user_id = @request.auth.id",
+        "view": "@request.auth.id != '' && user_id = @request.auth.id",
+        "create": "@request.auth.id != '' && user_id = @request.auth.id",
+        "update": "@request.auth.id != '' && user_id = @request.auth.id",
+        "delete": "@request.auth.id != '' && user_id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["product_link", "fixed_qr"]
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "slug",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "amount_cents",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "is_active",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_payment_links_user ON payment_links (user_id)",
+        "CREATE INDEX idx_payment_links_type ON payment_links (type)",
+        "CREATE INDEX idx_payment_links_created ON payment_links (created DESC)"
       ]
     }
   ]
