@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { chargesService, type ChargeRecord } from '@/services/charges'
-import { formatCurrency, formatDateBr, maskPixKey } from '@/lib/formatters'
+import { formatCurrency, formatDateBr, maskPixKey, maskAddress } from '@/lib/formatters'
 import { StatusBadge } from '@/components/StatusBadge'
 import { GoldConfetti } from '@/components/GoldConfetti'
+import { PixQrCode } from '@/components/PixQrCode'
 import useRealtime from '@/hooks/use-realtime'
 import {
   ArrowLeft,
@@ -17,6 +18,7 @@ import {
   Receipt,
   Clock,
   ShieldAlert,
+  Wallet,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -36,6 +38,7 @@ export const ChargeDetails: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [copiedPixCode, setCopiedPixCode] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
 
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
@@ -193,17 +196,117 @@ export const ChargeDetails: React.FC = () => {
           )}
         </div>
 
-        {/* Metadados da Cobrança */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-          <div className="p-3.5 rounded-xl bg-[#F6F4EF] border border-[#E6E1D8]">
-            <span className="text-[#8C6A3F] uppercase tracking-wider text-[10px] block font-semibold">
-              Chave Pix da Cobrança
-            </span>
-            <span className="font-mono text-[#1A1916] font-medium mt-0.5 block">
-              {maskPixKey(charge.pix_key)}
-            </span>
+        {/* Bloco de Validade e Carteira Liquid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div className="p-3.5 rounded-xl bg-[#FAF8F3] border border-[#E6E1D8] flex items-center gap-2.5">
+            <Clock className="w-4 h-4 text-[#8C6A3F] flex-shrink-0" />
+            <div>
+              <span className="text-[10px] uppercase tracking-wider text-[#8C6A3F] font-semibold block">
+                Prazo de Validade
+              </span>
+              <span className="text-[#1A1916] font-medium">
+                {charge.expires_at ? formatDateBr(charge.expires_at) : '24 horas após emissão'}
+              </span>
+            </div>
           </div>
 
+          <div className="p-3.5 rounded-xl bg-[#FAF8F3] border border-[#E6E1D8] flex items-center gap-2.5">
+            <Wallet className="w-4 h-4 text-[#8C6A3F] flex-shrink-0" />
+            <div className="overflow-hidden">
+              <span className="text-[10px] uppercase tracking-wider text-[#8C6A3F] font-semibold block">
+                Carteira Liquid de Recebimento
+              </span>
+              <span className="font-mono text-[#1A1916] font-medium truncate block">
+                {charge.liquid_address ? maskAddress(charge.liquid_address) : 'Padrão da conta'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Exibição do QR Code Pix e Código Copia e Cola */}
+        <div className="p-5 rounded-2xl bg-[#FAF8F3] border border-[#E6E1D8] space-y-4">
+          <div className="text-center space-y-1">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#1A1916]">
+              QR Code Pix para Pagamento
+            </h2>
+            <p className="text-[11px] text-[#6B6760]">
+              O pagador lê o QR Code no app do banco e você recebe em DePix na Liquid
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center justify-center py-2 space-y-3">
+            <PixQrCode
+              value={
+                charge.pix_copia_cola ||
+                `00020126580014br.gov.bcb.pix2536simulado-rom.app/pix/${charge.id}520400005303986540${(
+                  charge.amount_cents / 100
+                ).toFixed(2)}5802BR5925ROM SIMULADO NAO PAGAR6009SAO PAULO62070503***6304SIMU`
+              }
+              size={200}
+              isSimulated={charge.payment_method === 'simulated'}
+            />
+
+            <div className="max-w-md w-full p-2.5 rounded-xl bg-[#FFF3E0] border border-[#C9A227]/40 text-center">
+              <span className="text-[11px] font-semibold text-[#8C6A3F] flex items-center justify-center gap-1">
+                <AlertTriangle className="w-3.5 h-3.5 text-[#C9A227]" />
+                Modo Simulado — QR Code e payload fictícios (sem cobrança bancária real)
+              </span>
+            </div>
+          </div>
+
+          {/* Código Pix Copia e Cola */}
+          <div className="space-y-1.5 pt-2">
+            <label className="text-xs font-semibold text-[#1A1916] uppercase tracking-wider block">
+              Código Pix Copia e Cola
+            </label>
+            <div className="relative">
+              <textarea
+                readOnly
+                rows={2}
+                value={
+                  charge.pix_copia_cola ||
+                  `00020126580014br.gov.bcb.pix2536simulado-rom.app/pix/${charge.id}520400005303986540${(
+                    charge.amount_cents / 100
+                  ).toFixed(2)}5802BR5925ROM SIMULADO NAO PAGAR6009SAO PAULO62070503***6304SIMU`
+                }
+                className="w-full p-2.5 bg-white border border-[#D6D0C5] rounded-xl text-xs font-mono text-[#1A1916] select-all focus:outline-none focus:ring-1 focus:ring-[#C9A227] break-all resize-none"
+              />
+            </div>
+            <Button
+              type="button"
+              onClick={() => {
+                const code =
+                  charge.pix_copia_cola ||
+                  `00020126580014br.gov.bcb.pix2536simulado-rom.app/pix/${charge.id}520400005303986540${(
+                    charge.amount_cents / 100
+                  ).toFixed(2)}5802BR5925ROM SIMULADO NAO PAGAR6009SAO PAULO62070503***6304SIMU`
+                navigator.clipboard.writeText(code)
+                setCopiedPixCode(true)
+                setTimeout(() => setCopiedPixCode(false), 2500)
+              }}
+              className={`w-full h-10 text-xs font-semibold rounded-xl transition-all border-0 shadow-sm flex items-center justify-center gap-1.5 ${
+                copiedPixCode
+                  ? 'bg-[#2E7D32] hover:bg-[#2E7D32] text-white'
+                  : 'bg-gradient-to-r from-[#C9A227] to-[#A8861F] text-[#0B0B0D] hover:from-[#F5D77F] hover:to-[#C9A227]'
+              }`}
+            >
+              {copiedPixCode ? (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  Copiado com Sucesso!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  Copiar Código Pix Copia e Cola
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Metadados da Cobrança */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div className="p-3.5 rounded-xl bg-[#F6F4EF] border border-[#E6E1D8]">
             <span className="text-[#8C6A3F] uppercase tracking-wider text-[10px] block font-semibold">
               Método / Liquidação
@@ -212,6 +315,17 @@ export const ChargeDetails: React.FC = () => {
               {charge.payment_method === 'simulated'
                 ? 'Pix Simulado (Teste) → DePix Liquid'
                 : 'Pix Real → DePix Liquid'}
+            </span>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-[#F6F4EF] border border-[#E6E1D8]">
+            <span className="text-[#8C6A3F] uppercase tracking-wider text-[10px] block font-semibold">
+              Valor Líquido Estimado em DePix
+            </span>
+            <span className="text-[#1A1916] font-medium mt-0.5 block">
+              {charge.net_depix_amount_cents
+                ? `${(charge.net_depix_amount_cents / 100).toFixed(2)} DePix`
+                : `${(charge.amount_cents / 100).toFixed(2)} DePix (estimado)`}
             </span>
           </div>
 
@@ -228,7 +342,7 @@ export const ChargeDetails: React.FC = () => {
         {/* Link de Pagamento Simulado com Copiar */}
         <div className="space-y-1.5 pt-2">
           <label className="text-xs font-semibold text-[#1A1916] uppercase tracking-wider">
-            Link de Pagamento (Simulado)
+            Link de Pagamento Web (Simulado)
           </label>
           <div className="flex items-center gap-2">
             <input
@@ -243,12 +357,12 @@ export const ChargeDetails: React.FC = () => {
               className={`h-10 px-4 text-xs font-medium transition-all ${
                 copied
                   ? 'bg-[#2E7D32] hover:bg-[#2E7D32] text-white border-0'
-                  : 'bg-gradient-to-r from-[#C9A227] to-[#A8861F] text-[#0B0B0D] hover:from-[#F5D77F] hover:to-[#C9A227] border-0'
+                  : 'bg-white border border-[#D6D0C5] text-[#1A1916] hover:bg-[#FAF8F3]'
               }`}
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 mr-1" /> Copiado!
+                  <Check className="w-3.5 h-3.5 mr-1 text-white" /> Copiado!
                 </>
               ) : (
                 <>
